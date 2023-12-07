@@ -6,7 +6,7 @@ PLUGIN.description = "Plays music in some areas."
 ix.config.Add("area-music", true, "Should the music be on?", nil, {
     category = PLUGIN.name
 })
-
+-- tis cool
 ix.option.Add("area-music", ix.type.bool, true, {
     category = PLUGIN.name
 })

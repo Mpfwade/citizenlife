@@ -115,28 +115,3 @@ else -- CLIENT
         end
     end)
 end
-
-local function CheckChase(ply)
-    -- Check if the player is alive and valid
-    if not IsValid(ply) or not ply:Alive() then
-        return false
-    end
-
-    local chaseDistance = 500 -- Define the distance threshold for a chase
-    local chaseSpeedThreshold = 130 -- Define the speed threshold for a chase
-
-    -- Loop through all players to check if any player is chasing the given player
-    for _, otherPlayer in pairs(player.GetAll()) do
-        -- Check if the other player is alive, not the same as the given player, and within the chase distance
-        if IsValid(otherPlayer) and otherPlayer ~= ply and otherPlayer:Alive() then
-            local distance = otherPlayer:GetPos():Distance(ply:GetPos())
-
-            -- Check if the other player is within the chase distance and moving faster than the given player
-            if distance <= chaseDistance and otherPlayer:GetVelocity():Length() > chaseSpeedThreshold then
-                return true -- Someone is chasing the player
-            end
-        end
-    end
-
-    return false -- No one is chasing the player
-end

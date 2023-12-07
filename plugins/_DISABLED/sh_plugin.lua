@@ -1,0 +1,2 @@
+PLUGIN.name = "DISABLED PLUGINS"
+PLUGIN.author = "WADE"

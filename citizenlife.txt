@@ -1,0 +1,7 @@
+"citizenlife"
+{
+	"base"			"sandbox"
+	"title"			"CitizenLife"
+	"author" 		"Wade"
+	"menusystem"	"1"
+}

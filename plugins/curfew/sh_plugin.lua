@@ -3,7 +3,7 @@ PLUGIN.name = "Random Inspections and Rations"
 PLUGIN.author = "OG Maker: Scotnay (Edited by Wade)"
 PLUGIN.description = "Random events"
 PLUGIN.events = {
-    {
+    { 
         name = "INSPECTION",
         start = function(bIsStart)
             if bIsStart then

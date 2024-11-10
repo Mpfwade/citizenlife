@@ -41,52 +41,56 @@ function PLUGIN:PostRender()
 end
 
 net.Receive("ixScannerData", function()
-	local data = net.ReadData(net.ReadUInt(16))
-	data = util.Base64Encode(util.Decompress(data))
+    local data = net.ReadData(net.ReadUInt(16))
+    data = util.Base64Encode(util.Decompress(data))
 
-	if (not data) then return end
+    if (not data) then return end
 
-	if (IsValid(CURRENT_PHOTO)) then
-		local panel = CURRENT_PHOTO
+    if (IsValid(CURRENT_PHOTO)) then
+        local panel = CURRENT_PHOTO
 
-		CURRENT_PHOTO:AlphaTo(0, 0.25, 0, function()
-			if (IsValid(panel)) then
-				panel:Remove()
-			end
-		end)
-	end
+        CURRENT_PHOTO:AlphaTo(0, 0.25, 0, function()
+            if (IsValid(panel)) then
+                panel:Remove()
+            end
+        end)
+    end
 
-	local html = Format([[
-		<html>
-			<body style="background: black; overflow: hidden; margin: 0; padding: 0;">
-				<img src="data:image/jpeg;base64,%s" width="%s" height="%s" />
-			</body>
-		</html>
-	]], data, PICTURE_WIDTH, PICTURE_HEIGHT)
+    local html = Format([[
+        <html>
+            <body style="background: black; overflow: hidden; margin: 0; padding: 0;">
+                <img src="data:image/jpeg;base64,%s" width="%s" height="%s" />
+            </body>
+        </html>
+    ]], data, PICTURE_WIDTH, PICTURE_HEIGHT)
 
-	local panel = vgui.Create("DPanel")
-	panel:SetSize(PICTURE_WIDTH + 8, PICTURE_HEIGHT + 8)
-	panel:SetPos(ScrW(), 8)
-	panel:SetDrawBackground(true)
-	panel:SetAlpha(150)
+    local panel = vgui.Create("DPanel")
+    local panelWidth = PICTURE_WIDTH + 10
+    local panelHeight = PICTURE_HEIGHT + 10
+    local panelX = ScrW() - panelWidth - 8  -- Position X to the right
+    local panelY = ScrH() - panelHeight - 8  -- Position Y to the bottom
+    panel:SetSize(panelWidth, panelHeight)
+    panel:SetPos(panelX, ScrH())  -- Initially outside the screen at bottom
+    panel:SetDrawBackground(true)
+    panel:SetAlpha(150)
 
-	panel.body = panel:Add("DHTML")
-	panel.body:Dock(FILL)
-	panel.body:DockMargin(4, 4, 4, 4)
-	panel.body:SetHTML(html)
+    panel.body = panel:Add("DHTML")
+    panel.body:Dock(FILL)
+    panel.body:DockMargin(4, 4, 4, 4)
+    panel.body:SetHTML(html)
 
-	panel:MoveTo(ScrW() - (panel:GetWide() + 8), 8, 0.5)
+    panel:MoveTo(panelX, panelY, 0.5)  -- Move to the bottom right position
 
-	timer.Simple(15, function()
-		if (IsValid(panel)) then
-			panel:MoveTo(ScrW(), 8, 0.5, 0, -1, function()
-				panel:Remove()
-			end)
-		end
-	end)
+    timer.Simple(15, function()
+        if (IsValid(panel)) then
+            panel:MoveTo(panelX, ScrH(), 0.5, 0, -1, function()
+                panel:Remove()
+            end)
+        end
+    end)
 
-	PHOTO_CACHE[#PHOTO_CACHE + 1] = {data = html, time = os.time()}
-	CURRENT_PHOTO = panel
+    PHOTO_CACHE[#PHOTO_CACHE + 1] = {data = html, time = os.time()}
+    CURRENT_PHOTO = panel
 end)
 
 net.Receive("ixScannerClearPicture", function()

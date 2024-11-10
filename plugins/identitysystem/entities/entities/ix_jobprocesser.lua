@@ -35,66 +35,30 @@ if SERVER then
         self:StopSound("ambient/levels/labs/equipment_beep_loop1.wav")
     end
 
-    if SERVER then
-        util.AddNetworkString("ProcessorActionConfirmation")
+    function ENT:Use(user)
+		if(user:IsCombine() or user:GetCharacter():HasFlags("i")) then
+			user:SetAction("Logging in...", 1, function()
+				netstream.Start(user, "OpenCCAMenu", {})
+				user:Freeze(false)
+			end)
 
-        function ENT:Use(user)
-            local char = user:GetCharacter()
-            local inv = char:GetInventory()
-
-            if user:Team() == FACTION_CITIZEN and inv:HasItem("cp_papers") then
-                user:SetAction("Putting paper in...", 1, function()
-                    -- Display a warning message on the player's screen
-                    net.Start("ProcessorActionConfirmation")
-                    net.Send(user)
-
-                    -- Wait for the player's response
-                    net.Receive("ProcessorActionConfirmation", function(_, ply)
-                        local confirmed = net.ReadBool()
-
-                        if confirmed then
-                            net.Start("PlayJobAcceptedSound") -- Send a network message to play the sound on the client
-                            net.Send(user)
-
-                            timer.Simple(23.5, function()
-                                user:Freeze(false)
-                                char:SetFaction(FACTION_CCA)
-                                char:SetModel("models/police.mdl")
-                                char:SetName("UNRANKED-UNIT")
-                                user:SetWhitelisted(FACTION_CCA, true)
-                                hook.Run("PlayerLoadout", user)
-                                user:ResetBodygroups()
-
-                                for _, item in pairs(inv:GetItems()) do
-                                    item:Remove()
-                                end
-        
-                                net.Start("StopJobAcceptedSound") -- Send a network message to stop the sound on the client
-                                net.Send(user)
-
-                                timer.Simple(0.30, function()
-                                    user:Spawn()
-                                    char:SetClass(nil)
-                                end)
-                            end)
-                        else
-                            user:ChatPrint("Processing canceled.")
-                            user:SelectWeapon("ix_hands")
-                            user:Freeze(false)
-                            user:SetAction()
-                        end
-                    end)
-                end)
-
-                self:EmitSound("ambient/machines/keyboard7_clicks_enter.wav", 100, 50)
-                user:SelectWeapon("ix_hands")
-                user:Freeze(true)
-            else
-                user:ChatPrint("You need acceptance paper to use this terminal.")
-            end
-        end
-    end
+			self:EmitSound("buttons/button14.wav", 100, 50)
+			user:SelectWeapon("ix_hands")
+			user:Freeze(true)
+		else
+			user:Notify("The terminal is only accessible by the Combine.")
+		end
+	end
 else
+	surface.CreateFont("panel_font", {
+		["font"] = "verdana",
+		["size"] = 12,
+		["weight"] = 128,
+		["antialias"] = true
+	})
+
+        
+    end
     function ENT:Draw()
         self:DrawModel()
         local ang = self:GetAngles() + Angle(180, 0, 0)
@@ -117,4 +81,3 @@ else
             end
         end)
     end
-end

@@ -1,3 +1,4 @@
+
 function ix.weight.CalculateWeight(character) -- Calculates the total weight of all items a character is carrying.
 	local inventory = character:GetInventory()
 

@@ -142,24 +142,23 @@ function SWEP:ShootBullet(damage, num_bullets, aimcone)
 
     bullet.Num     = num_bullets
     bullet.Src     = self.Owner:GetShootPos() -- Source
-    bullet.Dir     = self.Owner:GetAimVector() -- Dir of bullet
+    bullet.Dir     = self.Owner:GetAimVector() -- Direction of the bullet
     bullet.Spread     = Vector(aimcone, aimcone, 0)    -- Aim Cone
-
-    if self.Primary.Tracer then
-        bullet.TracerName = self.Primary.Tracer
-    end
-
-    if self.Primary.Range then
-        bullet.Distance = self.Primary.Range
-    end
-
     bullet.Tracer    = 1 -- Show a tracer on every x bullets
     bullet.Force    = 1 -- Amount of force to give to phys objects
     bullet.Damage    = damage
     bullet.AmmoType = ""
 
-    if CLIENT then
-        bullet.Callback = function(attacker, tr)
+    -- Headshot detection and damage modification based on armor
+    bullet.Callback = function(attacker, tr, dmginfo)
+        local hitEntity = tr.Entity
+        if IsValid(hitEntity) and hitEntity:IsPlayer() then
+            if tr.HitGroup == HITGROUP_HEAD and hitEntity:Armor() < 10 then
+                dmginfo:SetDamage(1000) -- Set high damage to ensure instant kill on headshots if armor is less than 10
+            end
+        end
+
+        if CLIENT then
             debugoverlay.Cross(tr.HitPos, 2, 3, Color(255, 0, 0), true)
         end
     end

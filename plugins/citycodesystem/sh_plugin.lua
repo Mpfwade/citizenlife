@@ -5,11 +5,11 @@ PLUGIN.description = "City Codes for Lite Network, used from Overlord Community.
 ix.util.Include("sv_plugin.lua")
 
 ix.cityCodes = {
-    [0] = {"PRESERVED", Color(0, 138, 216), "Civil"},
-    [1] = {"MARGINAL", Color(223, 195, 33), "Civil Unrest"},
-    [2] = {"FRACTURED", Color(128, 0, 0), "City Turmoil"},
-    [3] = {"RE-ADMINISTRATION IN PROGRESS", Color(150, 150, 150), "Judgement Waiver"},
-    [4] = {"CODE VOID", Color(50, 50, 50), "Autonomous Judgement"},
+    [0] = {"PRESERVED", Color(0, 138, 216), "Civil", "npc/overwatch/radiovoice/preserve.wav"},
+    [1] = {"MARGINAL", Color(223, 195, 33), "Civil Unrest",},
+    [2] = {"TERMINAL PROSECUTION", Color(128, 0, 0), "City Turmoil", "npc/overwatch/radiovoice/terminalprosecution.wav"},
+    [3] = {"EXTERNAL JURISDICTION", Color(150, 150, 150), "Judgement Waiver", "npc/overwatch/radiovoice/externaljurisdiction.wav"},
+    [4] = {"CODE VOID", Color(50, 50, 50), "Autonomous Judgement", "path/to/sound5.mp3"}
 }
 
 local cityCodes = {
@@ -133,18 +133,28 @@ local function StopCivilUnrest()
     ccaDeathTimer = nil
 end
 
+local function ManageCivilUnrestTimer()
+    if ccaDeathTimer then
+        -- Reset the existing timer to 180 seconds
+        timer.Adjust("CCADEATHCHECK", 300, 1, StopCivilUnrest)
+    else
+        -- Create a new timer if it doesn't exist
+        ccaDeathTimer = timer.Create("CCADEATHCHECK", 300, 1, StopCivilUnrest)
+    end
+end
+
 function PLUGIN:PlayerDeath(victim, inflictor, attacker)
     if victim:Team() == FACTION_CCA then
         ccaDeaths = ccaDeaths + 1
 
-        if not ccaDeathTimer and ix.config.Get("cityCode", 0) == 0 then
+        if ix.config.Get("cityCode", 0) == 0 then
             StartCivilUnrest()
-            ccaDeathTimer = timer.Create("CCADEATHCHECK", 10, 1, StopCivilUnrest)
+            ManageCivilUnrestTimer()
         end
     end
 end
 
-timer.Create("CCADEATHCHECK", 10, 0, function()
+timer.Create("CCADEATHCHECK", 300, 0, function()
     if ccaDeaths == 0 and ccaDeathTimer and ix.config.Get("cityCode", 1) == 1 then
         StopCivilUnrest()
     end
@@ -162,12 +172,13 @@ function PLUGIN:PlayerHurt(ply, attacker, health, damage)
     end
 
     if ix.config.Get("cityCode", 0) == 0 then
-    playerTrauma[ply] = playerTrauma[ply] + 1
+        playerTrauma[ply] = playerTrauma[ply] + 1
     end
 
-    if playerTrauma[ply] >= traumaThreshold and ix.config.Get("cityCode", 0) == 0 and not ccaDeathTimer then
+    if playerTrauma[ply] >= traumaThreshold and ix.config.Get("cityCode", 0) == 0 then
         playerTrauma[ply] = 0
         StartCivilUnrest()
+        ManageCivilUnrestTimer() -- Restart timer whenever trauma threshold is reached
     end
 
     local name = string.upper(ply:Nick() or "unknown unit")
@@ -193,7 +204,7 @@ local function ResetPlayerTrauma(ply)
     end
 end
 
-timer.Create("ResetPlayerTrauma", 180, 0, function()
+timer.Create("ResetPlayerTrauma", 300, 0, function()
     if ix.config.Get("cityCode", 1) == 1 then
         for _, ply in ipairs(player.GetAll()) do
             ResetPlayerTrauma(ply)

@@ -8,6 +8,11 @@ function Schema:AddCombineDisplayMessage(text, color, sound, soundFile)
     end
 end
 
+function Schema:SendCaption(text, duration)
+	RunConsoleCommand("closecaption", "1")
+	gui.AddCaption(text, duration or string.len(text) * 0.1)
+end
+
 function notification.AddLegacy(text, _, __)
     LocalPlayer():Notify(tostring(text))
 end
@@ -200,11 +205,13 @@ end
 	Clientside Net Nessages
 ---------------------------------------------------------------------------]]--
 
+--[[
 net.Receive("ixAddCombineDisplayMessage", function()
     if LocalPlayer():IsCombine() then
         ix.gui.AddCombineDisplayMessage(tostring(net.ReadString()) or "Invalid Input..", net.ReadColor() or color_white, tobool(net.ReadBool()) or false)
     end
 end)
+--]]
 
 net.Receive("ixPlaySound", function(len, ply)
 	--surface.PlaySound(tostring(net.ReadString()))

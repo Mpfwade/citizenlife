@@ -15,7 +15,7 @@ ENT.HUDDesc = "A workbench used for crafting various of items and objects.."
 
 if (SERVER) then
     function ENT:Initialize()
-        self:SetModel("models/mosi/fallout4/furniture/workstations/workshopbench.mdl")
+        self:SetModel("models/props/cs_militia/table_shed.mdl")
         self:PhysicsInit(SOLID_VPHYSICS)
         self:SetMoveType(MOVETYPE_VPHYSICS)
         self:SetSolid(SOLID_VPHYSICS)

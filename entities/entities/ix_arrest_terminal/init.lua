@@ -123,7 +123,7 @@ net.Receive("ixCombineTerminalCharge", function(len, ply)
 
     target.ixJailState = true
 
-    if target:GetNWBool("ixActiveBOL", true) then
+    if target:GetNWBool("ixActiveBOL") then
         target:SetNWBool("ixActiveBOL", false)
         ply:SetRP(1 + ply:GetNWInt("ixRP"))
         ply:ChatNotify("You have gained a Rank Point for arresting a BOL target")
@@ -137,16 +137,20 @@ net.Receive("ixCombineTerminalCharge", function(len, ply)
 
     timer.Simple(chargesTime, function()
         if IsValid(target) then
-            target.ixJailState = nil
 
-            if target:Team() == FACTION_CITIZEN and chargesTime > 239 then
+            if target:Team() == FACTION_CITIZEN and chargesTime > 239 and target.ixJailState == true then
                 ix.chat.Send(ply, "dispatchradio", "Attention, " .. target:Nick() .. " has served their time. Amputate them immediately.")
                 target:SetBodygroup(1, 0)
                 target:SetBodygroup(2, 0)
-            elseif target:Team() == FACTION_CITIZEN and chargesTime < 240 then
+                target:SetNWBool("ixActiveBOL", false)
+                targetCharacter:SetData("ixJailPermaKill", true)
+                target.ixJailState = nil
+            elseif target:Team() == FACTION_CITIZEN and chargesTime < 240 and target.ixJailState == true then
                 ix.chat.Send(ply, "dispatchradio", "Attention, " .. target:Nick() .. " has served their sentence. Release them immediately.")
                 target:SetBodygroup(1, 0)
                 target:SetBodygroup(2, 0)
+                target:SetNWBool("ixActiveBOL", false)
+                target.ixJailState = nil
             end
 
             if target:Team() == FACTION_VORTIGAUNT then

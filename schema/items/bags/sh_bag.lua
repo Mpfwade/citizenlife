@@ -4,7 +4,7 @@ ITEM.model = "models/willardnetworks/clothingitems/backpack.mdl"
 ITEM.outfitCategory = "Misc"
 ITEM.noResetBodyGroups = true
 ITEM.bDropOnDeath = true
-
+ITEM.weight = 4.5
 
 ITEM.bodyGroups = {
 	["bag"] = 1

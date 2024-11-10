@@ -11,8 +11,7 @@ FACTION.models = {"models/police.mdl",}
 
 FACTION.isGloballyRecognized = true
 FACTION.isDefault = false
-FACTION.payTime = 600
-FACTION.pay = 0
+
 --[[ Custom Config ]]
 --
 FACTION.voicelinesHuman = false
@@ -23,30 +22,19 @@ FACTION.noModelSelection = true
 FACTION.command = "ix_faction_become_cca"
 FACTION.modelWhitelist = "models/police"
 
-if SERVER then
-    util.AddNetworkString("ixIsCCA")
-
-    function FACTION:OnTransferred(character)
-        if self.player then
-            local ply = self.player
-            net.Start("ixIsCCA")
-            net.Send(ply)
-            ply.ixSwitchedToCCA = true
-        end
-    end
-
-    net.Receive("ixIsCCA", function()
-        LocalPlayer().ixSwitchedToCCA = true
-    end)
-end
-
 function FACTION:GetDefaultName(client)
-    return "UNRANKED CP UNIT", true
-end
+    local char = client:GetCharacter()
+    if char then
+        -- Fetch the rank name from character's data, defaulting to "UNRANKED-UNIT" if not set
+        local rankName = char:GetData("ixCombineRank", "UNRANKED-UNIT")
 
-function FACTION:OnCharacterCreated(client, char)
-    if client:Team() == FACTION_CCA then
-        char:SetData("MadeCPChar", true)
+        -- Generate random words and numbers for the name
+        local RandomWords = table.Random({"UNION", "HELIX", "HERO", "VICTOR", "KING", "DEFENDER", "ROLLER", "JURY", "GRID", "VICE", "RAZOR", "NOVA", "SPEAR", "JUDGE", "SHIELD", "YELLOW", "LINE", "TAP", "STICK", "QUICK"})
+        local RandomNumbers = Schema:ZeroNumber(math.random(1, 99), 2)
+
+        -- Construct the standard name using the rank name
+        local StandardName = "c17:" .. rankName .. "." .. RandomWords .. "-" .. RandomNumbers
+        return StandardName, true
     end
 end
 

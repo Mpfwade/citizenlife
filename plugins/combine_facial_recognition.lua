@@ -2,7 +2,7 @@ local PLUGIN = PLUGIN
 PLUGIN.name = "Combine Facial Recognition"
 PLUGIN.author = "Elec / ZeMysticalTaco"
 PLUGIN.description = "Facial Recognition for Clockwork, adapted for use on HELIX and CMRP, thanks for the code, Elec!"
-ix.option.Add("CombineHUD", ix.type.bool, true)
+ix.option.Add("Combine Recognition", ix.type.bool, true)
 
 hook.Add("PlayerSpawn", "ixSetDivision", function(ply)
 	if ply:GetChar() then
@@ -34,6 +34,7 @@ if CLIENT then
 		size = 100,
 		antialias = true,
 	    shadow = false,
+		scanlines = 10,
 	    blursize = 1,
 	})
 
@@ -79,7 +80,7 @@ if CLIENT then
 				surface.SetFont("FaceDick")
 				local ns_x, ns_y = surface.GetTextSize(name)
 				local range = 512
-				local recog_on = ix.option.Get("CombineHUD")
+				local recog_on = ix.option.Get("Combine Recognition")
 
 				-- check if the player is in range, that their face is visible and that they're alive. and, of course, if facial recog is turned on.
 				local tr = util.TraceLine({

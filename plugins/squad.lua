@@ -87,6 +87,12 @@ if CLIENT then
                 return
             end
 
+            if LocalPlayer():GetCharacter():GetClass() == CLASS_CCA_BASICUNIT or LocalPlayer():GetCharacter():GetClass() == CLASS_CCA_GROUNDUNIT then
+                ix.util.Notify("You need to be a RL to create a squad.")
+
+                return
+            end
+
             local squadMembers = 0
 
             for _, player in pairs(player.GetAll()) do

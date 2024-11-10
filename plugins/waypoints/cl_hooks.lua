@@ -19,9 +19,9 @@ function PLUGIN:HUDPaint()
 		local text = waypoint.text
 		local x, y = screenPos.x, screenPos.y
 
-		surface.SetMaterial(ix.util.GetMaterial("willardnetworks/tabmenu/skills/skillicons/guns.png"))
+		surface.SetMaterial(ix.util.GetMaterial("citizenlifestuff/combine/combine_alert.png"))
 		surface.SetDrawColor(color)
-		surface.DrawTexturedRect(x - 22, y - 15, 40, 40)
+		surface.DrawTexturedRect(x - 20, y - 15, 40, 40)
 
 		surface.SetFont("RadioFont")
 		surface.SetTextColor(color)

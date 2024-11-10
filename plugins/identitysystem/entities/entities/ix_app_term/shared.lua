@@ -1,0 +1,9 @@
+ENT.Type = "anim"
+ENT.Base = "base_ai"
+ENT.PrintName = "Application Terminal"
+ENT.Author = "Citizenlifedev"
+ENT.Category = "IX:HL2RP"
+ENT.Spawnable = true
+ENT.AdminSpawnable = true
+ENT.bNoPersist = true
+ENT.AutomaticFrameAdvance = true

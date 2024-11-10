@@ -13,7 +13,7 @@ ITEM.height = 1
 ITEM.HealAmount = 15
 ITEM.Volume = 70
 ITEM.price = 20
-
+ITEM.weight = 0.11
 -- Item Functions
 ITEM.functions.Apply = {
     name = "Heal yourself",

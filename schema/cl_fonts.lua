@@ -28,6 +28,11 @@ surface.CreateFont("RadioFont", {
 	blursize = 0.5,
 })
 
+surface.CreateFont("ErrorTerm", {
+	font = "Eurostile",
+	size = 10,
+})
+
 surface.CreateFont("lnAkbarFontBig", {
 	font = "akbar",
 	size = ScreenScale(20),

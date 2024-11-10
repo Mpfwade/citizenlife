@@ -80,10 +80,11 @@ function PANEL:SetStage(text)
 end
 
 -- Called when the panel is receiving data and will start to build.
-function PANEL:Build(target, cid, record)
+function PANEL:Build(target, cid, unique, record)
     self.target = target
     self.character = target:GetCharacter()
     self.cidValue = cid
+    self.aptValue = unique
     self.recordTable = record
     self.content = self:AddStage("Home")
     self.content:SetPaintBackground(false)
@@ -120,6 +121,14 @@ function PANEL:BuildCID()
     self.rightDock:SetPaintBackground(false)
     self.name = self.rightDock:Add(self:BuildLabel("Name : " .. self.character:GetName() or "Error", false, 4))
     self.cid = self.rightDock:Add(self:BuildLabel("CID : " .. self.cidValue or "ERROR", false, 4))
+    local aptDisplayValue = "ERROR"
+    if type(self.aptValue) == "table" and self.aptValue.id then
+    aptDisplayValue = self.aptValue.id
+    elseif type(self.aptValue) == "string" or type(self.aptValue) == "number" then
+    aptDisplayValue = self.aptValue
+end
+
+self.unique = self.rightDock:Add(self:BuildLabel("APT : " .. aptDisplayValue, false, 4))
     CursorStop(self)
 end
 

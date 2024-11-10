@@ -11,7 +11,7 @@ ENT.Category 		= "IX:HL2RP"
 ENT.AutomaticFrameAdvance = true
 ENT.Spawnable = true
 ENT.AdminOnly = true
-ENT.bNoPersist = true
+ENT.bNoPersist = false
 
 ENT.MaxRenderDistance = math.pow(256, 2)
 ENT.MaxStock = 4

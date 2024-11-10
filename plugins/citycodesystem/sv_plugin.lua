@@ -11,13 +11,13 @@ function PLUGIN:CivilUnrestStart()
         end
     end
 
-    PlayEventSound("music/stingers/hl1_stinger_song27.mp3")
+    PlayEventSound("music/short/marginal.wav")
     PlayTimedEventSound(9, "alarms/choreo_a1_intro_basement_alarm.mp3")
     EmitTimedShake(9)
     PlayTimedEventSound(13, "npc/overwatch/cityvoice/f_unrestprocedure1_spkr.wav")
 
-    timer.Create("ixUnrestSiren", 10, 0, function()
-        PlayTimedEventSound(3.15, "hlacomvoice/alarms/amb_c17_distant_alarm_02_rs.mp3")
+    timer.Create("ixUnrestSiren", 60, 0, function()
+        PlayTimedEventSound(3.15, "ambient/alarms/apc_alarm_pass1.wav")
         EmitTimedShake(3.15)
     end)
 end
@@ -25,7 +25,6 @@ end
 function PLUGIN:CivilUnrestStop()
     SetGlobalBool("ixCUStatus", false)
     timer.Remove("ixUnrestSiren")
-
     local sounds = {"npc/overwatch/radiovoice/on3.wav", "npc/overwatch/radiovoice/attention.wav", "npc/overwatch/radiovoice/sociostabilizationrestored.wav", "npc/overwatch/radiovoice/off2.wav"}
 
     for k, v in ipairs(player.GetAll()) do

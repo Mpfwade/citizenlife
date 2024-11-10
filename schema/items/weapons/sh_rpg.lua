@@ -13,6 +13,7 @@ ITEM.skin = 0
 
 ITEM.width = 1
 ITEM.height = 1
+ITEM.weight = 15.87
 
 -- Item Custom Configuration
 

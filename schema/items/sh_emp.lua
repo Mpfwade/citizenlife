@@ -7,13 +7,14 @@ ITEM.bDropOnDeath = true
 
 -- Item Configuration
 
-ITEM.model = "models/transmissions_element120/charger_attachment.mdl"
+ITEM.model = "models/alyx_emptool_prop.mdl"
 ITEM.skin = 0
 
 -- Item Inventory Size Configuration
 
 ITEM.width = 1
 ITEM.height = 1
+ITEM.weight = 1.36
 
 -- Item Custom Configuration
 
@@ -36,7 +37,7 @@ ITEM.functions.OverloadDoor = {
 			local randomChance = math.random(1,10)
 			if not (target:HasSpawnFlags(256) and target:HasSpawnFlags(1024)) then
 				ply:Freeze(true)
-				ply:SetAction("Overloarding...", 3, function()
+				ply:SetAction("Overloading...", 3, function()
 					ply:Freeze(false)
 					if (randomChance > 5) then
 						target:Fire("open")

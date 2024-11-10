@@ -97,7 +97,7 @@ ix.anim.metrocop = {
 		[ACT_MP_CROUCHWALK] = {ACT_WALK_CROUCH, ACT_WALK_CROUCH},
 		[ACT_MP_RUN] = {ACT_RUN, ACT_RUN},
 		[ACT_LAND] = {ACT_RESET, ACT_RESET},
-		attack = ACT_COMBINE_THROW_GRENADE
+		attack = "grenadethrow"
 	},
 	melee = {
 		[ACT_MP_STAND_IDLE] = {ACT_IDLE, ACT_IDLE_ANGRY_MELEE},

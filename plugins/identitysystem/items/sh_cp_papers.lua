@@ -4,6 +4,7 @@ ITEM.description = "Civil Protection enlistment paper."
 ITEM.category = "Other"
 ITEM.noBusiness = true
 ITEM.noDrop = true
+ITEM.weight = 0
 
 
 function ITEM:GetDescription()

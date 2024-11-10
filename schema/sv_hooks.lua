@@ -45,13 +45,7 @@ function Schema:CanPlayerHoldObject(ply, ent)
 end
 
 function Schema:PlayerSwitchFlashlight(ply, state)
-    if (ply.ixAntiSpamFlashlight or 0) < CurTime() then
-        ply.ixAntiSpamFlashlight = CurTime() + 0.2
-
-        return true
-    else
-        return false
-    end
+    return false
 end
 
 function Schema:PlayerSpawnSENT(ply, class)
@@ -176,46 +170,6 @@ function Schema:ShowSpare2(ply)
     ply:ConCommand("ix_togglethirdperson")
 end
 
-function Schema:Move(ply, mv)
-    local char = ply:GetCharacter()
-    local walkPenalty = 0
-    local runPenalty = 0
-    local runBoost = 0
-
-    if ply:Team() == FACTION_CITIZEN then
-        runBoost = 5
-    end
-
-    if char then
-        if char:GetData("ixBrokenLegs") then
-            walkPenalty = 5
-            runPenalty = 85
-        elseif ply:IsRestricted() then
-            walkPenalty = 3
-            runPenalty = 75
-        end
-    end
-
-    ply:SetDuckSpeed(0.4)
-    ply:SetUnDuckSpeed(0.4)
-    ply:SetSlowWalkSpeed(70)
-    ply:SetCrouchedWalkSpeed(0.7)
-
-    if ply:KeyDown(IN_FORWARD) and (ply:KeyDown(IN_MOVELEFT) or ply:KeyDown(IN_MOVERIGHT)) then
-        ply:SetWalkSpeed(80 - walkPenalty)
-        ply:SetRunSpeed(165 + runBoost - runPenalty)
-    elseif ply:KeyDown(IN_FORWARD) then
-        ply:SetWalkSpeed(90 - walkPenalty)
-        ply:SetRunSpeed(180 + runBoost - runPenalty)
-    elseif ply:KeyDown(IN_MOVELEFT) or ply:KeyDown(IN_MOVERIGHT) then
-        ply:SetWalkSpeed(85 - walkPenalty)
-        ply:SetRunSpeed(170 + runBoost - runPenalty)
-    elseif ply:KeyDown(IN_BACK) then
-        ply:SetWalkSpeed(60 - walkPenalty)
-        ply:SetRunSpeed(130 + runBoost - runPenalty)
-    end
-end
-
 local allowedPlayersContainers = {
     ["STEAM_0:1:65213148"] = true,
     ["STEAM_0:0:206764368"] = true,
@@ -244,6 +198,7 @@ function Schema:PlayerUse(ply, entity)
             entity:SetNetVar("tying", false)
             entity:SetAction("You are being untied.", 1)
             entity:SetNetVar("untying", true)
+
             ply:EmitSound("physics/plastic/plastic_box_impact_bullet5.wav")
             ply:SetAction("Untying.", 1)
             ix.chat.Send(ply, "me", "unties the person in front of them.")
@@ -253,20 +208,23 @@ function Schema:PlayerUse(ply, entity)
                 entity.ixArrestedBy = nil
                 entity:SetRestricted(false)
                 entity:SetNetVar("untying", false)
+                entity:LeaveSequence()
+                entity:Freeze(false)
                 tarchar:SetData("tied", false)
+
             end, 1, function()
                 if IsValid(entity) then
                     entity:SetNetVar("untying", false)
                     entity:SetAction()
                 end
 
-                if IsValid(ply) then
-                    ply:SetAction()
-                end
-            end)
-        end
+                  if IsValid(ply) then
+                       ply:SetAction()
+                   end
+               end)
+           end
+       end
     end
-end
 
 function Schema:PlayerUseDoor(client, door)
     if client:IsCombine() or client:Team() == FACTION_CA then
@@ -281,14 +239,6 @@ function Schema:PlayerSpray(ply)
 end
 
 function Schema:OnDamagedByExplosion()
-    return true
-end
-
-function Schema:PlayerCanHearPlayersVoice(listener, ply)
-    if not (IsValid(ply) and ply:Alive() and ply:GetCharacter()) then return end
-    if not (IsValid(listener) and listener:Alive() and listener:GetCharacter()) then return end
-    if not ply:GetCharacter():HasFlags("V") then return false end
-
     return true
 end
 
@@ -466,24 +416,6 @@ function Schema:PlayerLoadout(ply)
             end)
         end
 
-        if attacker:IsNPC() and (attacker:GetClass() == "npc_headcrab" or attacker:GetClass() == "npc_headcrab_fast") then
-            local headCrab = ents.Create("npc_zombie")
-
-            if attacker:GetClass() == "npc_headcrab_fast" then
-                headCrab = ents.Create("npc_fastzombie")
-            end
-
-            headCrab:SetPos(ply:GetPos())
-            headCrab:SetAngles(ply:GetAngles())
-            headCrab:Spawn()
-            attacker:Remove()
-            ply:Notify("A Headcrab has latched on to your body and is now taking control of it!")
-        end
-
-        if ply:Team() == FACTION_CITIZEN and char then
-            char:SetClass(CLASS_CITIZEN)
-        end
-
         if ply:Team() == FACTION_CITIZEN and char and ply:GetCharacter():GetClass() == CLASS_CITIZEN then
             ply:SetBodygroup(1, 0)
             ply:SetBodygroup(2, 0)
@@ -503,14 +435,6 @@ function Schema:PlayerLoadout(ply)
             ply:SetBodygroup(8, 1)
             ply:SetBodygroup(9, 1)
         end
-    end
-end
-
-function Schema:PlayerInteractItem(ply, action, item)
-    if action == "drop" then
-        timer.Simple(0.1, function()
-            item:GetEntity():SetCollisionGroup(COLLISION_GROUP_WORLD)
-        end)
     end
 end
 
@@ -535,27 +459,6 @@ end
 
 function Schema:ShouldRemoveRagdollOnDeath()
     return false
-end
-
--- Prop Cost
-function Schema:PlayerSpawnProp(ply)
-    local char = ply:GetCharacter()
-
-    if ply:IsAdmin() or (ply:IsCombine() and ply:Nick():find("GRID")) then
-        ply:Notify("You did not pay any tokens to spawn this prop.")
-
-        return true
-    else
-        return false, ply:Notify("You cannot spawn props right now")
-    end
-
-    if char:HasMoney(4) then
-        char:TakeMoney(4)
-
-        return true
-    else
-        return false, ply:Notify("You need 4 tokens!")
-    end
 end
 
 function Schema:KeyPress(ply, key)
@@ -763,6 +666,8 @@ function Schema:CanPlayerUseCharacter(client, character)
     end
 
     if client:GetNWBool("ixActiveBOL") then return false, "You cannot change characters while you have a BOL!" end
+    if client.ixJailState == true then return false, "You cannot change characters while you are in jail!" end
+    if client:IsRestricted() then return false, "You cannot change characters while tied!" end
     local bHasWhitelist = client:HasWhitelist(character:GetFaction())
     if not bHasWhitelist then return false, "@noWhitelist" end
 end
@@ -777,16 +682,30 @@ hook.Add("SetupMove", "BlockCommand", function(ply, move)
     if move:GetImpulseCommand() == 103 then return true end -- The impulse command for "+mmm" is 103 -- Return true to block the command
 end)
 
+local onSounds = {
+    "npc/metropolice/vo/on1.wav",
+    "npc/metropolice/vo/on2.wav",
+}
+
+local offSounds = {
+    "npc/metropolice/vo/off1.wav",
+    "npc/metropolice/vo/off2.wav",
+    "npc/metropolice/vo/off3.wav",
+    "npc/metropolice/vo/off4.wav",
+}
+
 netstream.Hook("PlayerChatTextChanged", function(client, key)
     if client:IsCombine() and not client.bTypingBeep then
-        client:EmitSound("hlacomvoice/beepboops/combine_radio_on_09.wav")
+        local sound = onSounds[math.random(#onSounds)] -- Correct random sound selection
+        client:EmitSound(sound)
         client.bTypingBeep = true
     end
 end)
 
 netstream.Hook("PlayerFinishChat", function(client)
     if client:IsCombine() and client.bTypingBeep then
-        client:EmitSound("hlacomvoice/beepboops/combine_radio_off_06.wav")
+        local sound = offSounds[math.random(#offSounds)] -- Correct random sound selection
+        client:EmitSound(sound)
         client.bTypingBeep = nil
     end
 end)

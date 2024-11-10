@@ -5,6 +5,20 @@ RECIPE.category = "Medical Items"
 
 RECIPE.base = "recipe_base"
 
+
+RECIPE:PostHook("OnCanCraft", function(self, ply)
+    for _, v in pairs(ents.FindByClass( self.station )) do
+        if ply:GetPos():DistToSqr(v:GetPos()) < 100 * 100 then
+            if ply.isCrafting == true then return false, "You cannot make multiple items while you are making something else!" end
+            ply.benchInUse = v
+
+            return true
+        end
+    end
+
+    return false, "You need to be near a station."
+end)
+
 RECIPE.requirements = {
 	["cloth"] = 2,
 }

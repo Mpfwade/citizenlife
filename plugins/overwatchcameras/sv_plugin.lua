@@ -3,6 +3,8 @@ local DispatchAnontimer = false
 local shouldDispatchAnon = false
 local weaponlp = false
 local arealp = false
+local giveBOL = false 
+local bolReason = ("")
 
 local hatedWeapons = {
     ["ls_pistol"] = true,
@@ -21,56 +23,73 @@ local hatedWeapons = {
     ["ls_smg"] = true,
     ["ls_spas12"] = true,
     ["ls_molotov"] = true,
+    ["weapon_crowbar"] = true,
 }
 
 function PLUGIN:GetCameraRelationship(client)
-    if client:IsCombine() then return D_LI end
+    if client:IsCombine() then 
+        return D_LI 
+    end
+
     local weapon = client:GetActiveWeapon()
     local area = client:GetArea()
+    local character = client:GetCharacter()
 
+--[[
+    -- Check if the client is sprinting
+    if client:IsSprinting() and not character:GetData("BandanaEquipped", false) then
+        bolReason = "99, reckless operation"
+        shouldDispatchAnon = false
+        giveBOL = true
+        return D_HT, "@DISP, Reports 99, reckless operation"
+    end
+]]-- this shit is annoying
+    -- Check if the client is carrying a hated weapon
     if IsValid(weapon) then
         local weaponClass = weapon:GetClass()
-
-        if hatedWeapons[weaponClass] and not client.ixBandanaEquipped then
-            giveBOL = true
+        if hatedWeapons[weaponClass] and not character:GetData("BandanaEquipped", false) then
+            bolReason = "95, illegal carrying"
             shouldDispatchAnon = true
             weaponlp = true
-
+            giveBOL = true
             return D_HT, "@relationArmed"
         end
     end
 
-    if client:Team() == FACTION_CITIZEN and not client.ixBandanaEquipped then
-        if area == "Intake-Hub 1" then
-            giveBOL = false
-            shouldDispatchAnon = false
-
+    -- Check if the client is in a restricted area
+    if client:Team() == FACTION_CITIZEN and not character:GetData("BandanaEquipped", false) then
+        if area == "404 Zone" or area == "Restricted-Block" then 
+            bolReason = "63, criminal trespass"
+            shouldDispatchAnon = true
+            arealp = true
+            giveBOL = true
             return D_HT, "@relationArea"
-        elseif area == "404 Zone" then
-            giveBOL = true
-            shouldDispatchAnon = true
-            arealp = true
-
-            return D_HT, "@relationArea404"
-        elseif area == "Restricted-Block" then
-            giveBOL = true
-            shouldDispatchAnon = true
-            arealp = true
-
-            return D_HT, "@relationArea404"
-        elseif not area or area == "" then
-            return D_HT, false
+        elseif area == "Intake-Hub" then
+            giveBOL = false
+            arealp = false
+            shouldDispatchAnon = false
+            return D_HT, "@relationArea"
         end
-    else
-        return
     end
 
-    if client:GetNWBool("ixActiveBOL") then return D_HT, "@relationUPI" end
+    -- Check if the character does not have the "cid" or "cca_id" item
+    if character and character:GetInventory() and not character:GetInventory():HasItem("cid") and not character:GetInventory():HasItem("cca_id") then
+        bolReason = "Miscount detected"
+        shouldDispatchAnon = false
+        return D_HT, "@DISP, Reports possible miscount"
+    end
+
+    if client:GetNWBool("ixActiveBOL") and not character:GetData("BandanaEquipped", false) then
+        shouldDispatchAnon = false
+        return D_HT, "@relationUPI" 
+    end
 
     return D_NU
 end
 
 function PLUGIN:OnFoundPlayer(entity, client)
+    if not IsValid(entity) or not IsValid(client) then return end
+
     local relationship, notice, color = self:GetCameraRelationship(client)
 
     if (relationship == D_HT and (client.ixCooldown or 0) < CurTime()) then
@@ -86,8 +105,13 @@ function PLUGIN:OnFoundPlayer(entity, client)
             end
         end)
 
-        if giveBOL == true and client:GetNWBool("ixActiveBOL", false) then
+        if giveBOL == true and not client:GetNWBool("ixActiveBOL") then
+            local existingReason = client:GetNWString("ixBOLReason", "")
+            if existingReason ~= "" then
+                existingReason = existingReason .. ", " -- Add a newline for separation
+            end
             client:SetNWBool("ixActiveBOL", true)
+            client:SetNWString("ixBOLReason", existingReason .. bolReason) -- Append new reason
         end
 
         if arealp == true then
@@ -127,10 +151,7 @@ end
 
 function PLUGIN:OnFoundArea(entity, client)
     local name = entity:GetName() ~= "" and entity:GetName() or "DISP"
-
-    if Schema.AddWaypoint and notice then
-        Schema:AddWaypoint(client:GetPos(), notice, color or Color(255, 0, 0), 30, nil, name)
-    end
+    local relationship, notice, color = self:GetCameraRelationship(client)  -- Added for relationship checking
 
     if Schema.AddWaypoint and notice then
         Schema:AddWaypoint(client:GetPos(), notice, color or Color(255, 0, 0), 30, nil, name)
@@ -139,6 +160,7 @@ end
 
 function PLUGIN:OnDestroyed(entity, client)
     local name = entity:GetName() ~= "" and entity:GetName() or "DISP"
+    local relationship, notice, color = self:GetCameraRelationship(client)  -- Added for relationship checking
 
     local sounds = {"npc/overwatch/radiovoice/on3.wav", "npc/overwatch/radiovoice/attention.wav", "npc/overwatch/radiovoice/threattoproperty51b.wav", "npc/overwatch/radiovoice/inprogress.wav", "npc/overwatch/radiovoice/investigateandreport.wav", "npc/overwatch/radiovoice/off2.wav"}
 

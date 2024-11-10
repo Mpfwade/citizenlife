@@ -1,9 +1,11 @@
 ITEM.name = "Identiband"
-ITEM.model = Model("models/willardnetworks/misc/idcard.mdl")
+ITEM.model = Model("models/sky/cid.mdl")
 ITEM.description = "A flat piece of plastic to locate your apartment and changes your status to an official citizen of the city. Reminder: The true citizen's identiband is kept clean and visible at all times.\n"
 ITEM.category = "Other"
 ITEM.noBusiness = true
-ITEM.noDrop = true
+ITEM.noDrop = false
+ITEM.bDropOnDeath = false
+ITEM.weight = 0
 
 function ITEM:GetDescription()
 	return self.description
@@ -15,7 +17,7 @@ end
 
 function ITEM:GetModel()
 	if self:IsCombine() then
-		return "models/willardnetworks/misc/idcard.mdl"
+		return "models/sky/cid.mdl"
 	end
 	
 	return self.model
@@ -84,4 +86,18 @@ ITEM.functions.ViewRecord = {
 
 function ITEM:OnEntityTakeDamage(ent, dmg)
     return false
+end
+
+if SERVER then
+	function ITEM:OnPlayerDeath(client, character, inventory)
+		if self.bDropOnDeath then
+			return
+		end
+
+		-- Ensuring the item is removed from the inventory on death if needed
+		local inv = character:GetInventory()
+		if inv and inv:HasItem(self.uniqueID) then
+			inv:RemoveItem(self.id)
+		end
+	end
 end

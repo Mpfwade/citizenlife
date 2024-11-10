@@ -44,6 +44,19 @@ Schema.voices.Add("Dispatch", "RE ADMINISTRATION", "Security alert. Re-administr
 Schema.voices.Add("Dispatch", "RESPONSE CODE", "Response code: Shield. Key. Migrate.", "dispatch/disp_keyshieldmigrate.wav", true)
 Schema.voices.Add("Dispatch", "UPDATE CODE", "Alert. Response units. Update code: Flush. Escort. Continue.", "dispatch/disp_updatecode.wav", true)
 
-Schema.voices.Add("Dispatch", "WORK", "Attention All Working Residence: Your scheduled work session is ready for completion. Please proceed to the respective warehouse for task assignment.", "loudspeaker/workcycle.wav")
-Schema.voices.Add("Dispatch", "SOCIETAL INFECTION", "Attention: Societal infection has been detected. Practices to combat unrest procedures are being enacted. Remember: Cooperation with civil protection is the key to safety.", "loudspeaker/socioinfection.wav")
-Schema.voices.Add("Dispatch", "CURFEW", "*intelligible* Attention All Citizens: The curfew is now active. The curfew will end tomorrow morning at sunrise. Violators will be subject to interrogation and detained when necessary. Remember the boldest measures are the safest.", "loudspeaker/curfew.wav")
+Schema.voices.Add("Dispatch", "ATTENTION", "Citizen, stop.", "scanner/spch_attention1.wav")
+Schema.voices.Add("Dispatch", "ATTENTION2", "Citizen, do not move.", "scanner/spch_attention2.wav")
+Schema.voices.Add("Dispatch", "ATTENTION3", "Attention, Citizen.", "scanner/spch_attention3.wav")
+Schema.voices.Add("Dispatch", "FAILED SCAN", "Failure to scan, retinal imprint taken.", "scanner/spch_failure1.wav")
+Schema.voices.Add("Dispatch", "MAY PROCEED", "You may proceed.", "scanner/spch_proceed1.wav")
+Schema.voices.Add("Dispatch", "MAY PROCEED2", "You are free to go.", "scanner/spch_proceed2.wav")
+Schema.voices.Add("Dispatch", "SCAN", "Submit to be scanned.", "scanner/spch_scan1.wav")
+Schema.voices.Add("Dispatch", "SCAN2", "Present your ID band", "scanner/spch_scan2.wav")
+Schema.voices.Add("Dispatch", "SCAN3", "Hold still for scan.", "scanner/spch_scan3.wav")
+Schema.voices.Add("Dispatch", "HANDS ON YOUR HEAD", "Hands on your head.", "scanner/spch_scan4.wav")
+Schema.voices.Add("Dispatch", "VIOLATION NOTED", "Violation has been noted.", "scanner/spch_violation1.wav")
+
+
+
+
+

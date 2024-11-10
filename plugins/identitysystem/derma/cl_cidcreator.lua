@@ -93,10 +93,7 @@ function PANEL:Init()
 
 		ix.gui.cidcreator.nameinput:SetText(item:GetData("citizen_name", "error"))
 		ix.gui.cidcreator.idinput:SetValue(item:GetData("cid", 99999))
-
-		if(item:GetData("employment")) then
-			ix.gui.cidcreator.jobTitle:SetValue(item:GetData("employment"))
-		end
+		ix.gui.cidcreator.jobTitle:SetText(item:GetData("unique", 20))
 		ix.gui.cidcreator.item = item
 	end
 

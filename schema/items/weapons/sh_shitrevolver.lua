@@ -13,6 +13,7 @@ ITEM.skin = 0
 -- Item Inventory Size Configuration
 ITEM.width = 1
 ITEM.height = 1
+ITEM.weight = 9.0
 
 -- Item Custom Configuration
 

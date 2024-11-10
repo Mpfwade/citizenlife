@@ -7,6 +7,7 @@ ITEM.cost = 50
 ITEM.classes = {CLASS_EMP, CLASS_EOW}
 ITEM.flag = "v"
 ITEM.bDropOnDeath = true
+ITEM.weight = 0.9
 
 -- Inventory drawing
 if (CLIENT) then

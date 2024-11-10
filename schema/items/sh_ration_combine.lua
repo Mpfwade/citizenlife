@@ -12,6 +12,7 @@ ITEM.illegal = false
 ITEM.items = {"noodles", "orange", "coffee"}
 ITEM.money = 500
 ITEM.noBusiness = true
+ITEM.weight = 2.26
 
 -- Item Price Configuration
 

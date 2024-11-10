@@ -2,7 +2,7 @@
 --
 FACTION.name = "Citizen"
 FACTION.description = [[Name: Citizen
-Description: The lowest class of Universal Union society. They are forced to follow the Universal Union's dictatorship with absolute obedience, or face punishments and even execution. The Universal Union keeps citizens weak and malnourished, and it is all they can do to try and survive. However, some brave citizens dare to stand against the Combine...]]
+Description: The lowest class of Universal Union society. They are forced to follow the Universal Union's dictatorship with absolute obedience, or face punishment. The Universal Union keeps citizens weak and malnourished, all they can do to try and survive. However, some brave citizens dare to stand against the Combine...]]
 FACTION.color = Color(101,56,24)
 
 --[[ Helix Base Config ]]
@@ -40,21 +40,21 @@ FACTION.models = {
 
 FACTION.isGloballyRecognized = false
 FACTION.isDefault = true
-FACTION.payTime = 600
-FACTION.pay = 0
 
 function FACTION:OnCharacterCreated(client, character)
     local id = Schema:ZeroNumber(math.random(1, 99999), 5)
+    local apt = Schema:ZeroNumber(math.random(10, 20), 2)
     local inventory = character:GetInventory()
+
     character:SetData("cid", id)
+    character:SetData("employment", apt)  
+
     inventory:Add("suitcase", 1)
-    inventory:Add("supplements", 1)
-    inventory:Add("water", 1)
 
     inventory:Add("transfer_papers", 1, {
         citizen_name = character:GetName(),
-        cid = character:GetData("cid", id),
-        unique = math.random(0000000, 999999999),
+        cid = character:GetData("cid"),
+        unique = character:GetData("employment", apt), 
         issue_date = ix.date.GetFormatted("%A, %B %d, %Y. %H:%M:%S"),
     })
 end

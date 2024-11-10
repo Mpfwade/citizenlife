@@ -75,7 +75,8 @@ concommand.Add("ix_hl2rp_deactivate_bol", function(ply, cmd, args)
             ply:Notify(tostring(args[1]).." is a invalid person!")
             return false
         end
-
+        
+        target:SetNWString("ixBOLReason", "")
 		target:SetNWBool("ixActiveBOL", false)
 
         ply:Notify("You lifted "..target:Nick().."'s BOL!")

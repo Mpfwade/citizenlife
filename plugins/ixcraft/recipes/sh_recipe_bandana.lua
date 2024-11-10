@@ -3,10 +3,8 @@ RECIPE.description = "Craft a Bandana."
 RECIPE.model = "models/props_lab/box01a.mdl"
 RECIPE.category = "Clothing"
 
-RECIPE.base = "recipe_base"
-
 RECIPE.requirements = {
-	["cloth"] = 4,
+	["cloth"] = 1,
 }
 RECIPE.results = {
 	["bandana"] = 1,

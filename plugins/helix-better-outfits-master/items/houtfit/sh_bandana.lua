@@ -2,9 +2,10 @@
 
 ITEM.name = "Bandana"
 ITEM.description = "A Bandana, it can be used to hide your identity."
-ITEM.category = "Clothing"
+ITEM.category = "Clothes/Outfits"
 ITEM.outfitCategory = "Headstrap"
 ITEM.bDropOnDeath = true
+ITEM.noResetBodyGroups = true
 
 -- Item Configuration
 

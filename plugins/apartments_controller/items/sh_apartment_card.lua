@@ -1,7 +1,7 @@
 ITEM.name = "Identiband/Apartment card"
 ITEM.uniqueID = "apartment_card"
 ITEM.description = "A flat piece of plastic to locate your apartment and changes your status to an official citizen of the city. Reminder: The true citizen's identiband is kept clean and visible at all times."
-ITEM.model = "models/willardnetworks/misc/idcard.mdl"
+ITEM.model = "models/gibs/metal_gib4.mdl"
 ITEM.factions = {FACTION_CP, FACTION_ADMIN}
 ITEM.functions.Assign = {
 

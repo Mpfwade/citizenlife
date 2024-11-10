@@ -25,6 +25,7 @@ ix.moreItemsTable = {
         ["width"] = 2,
         ["height"] = 2,
         ["price"] = 105,
+        ["bDropOnDeath"] = true,
     },
 }
 
@@ -88,7 +89,7 @@ ix.char.RegisterVar("description", {
 })
 
 ix.char.RegisterVar("attributes", {
-    bNoDisplay = true,
+    bNoDisplay = false,
     field = "attributes",
     fieldType = ix.type.text,
     default = {},

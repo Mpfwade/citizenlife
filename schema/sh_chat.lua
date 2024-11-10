@@ -10,7 +10,7 @@ ix.chat.Register("broadcast", {
 		end
 	end,
 	OnChatAdd = function(self, speaker, text)
-		chat.AddText(Material("willardnetworks/chat/broadcast_icon.png"), Color(150, 0, 0), '[CITY-BROADCAST] '..speaker:Nick()..' broadcasts ', ix.config.Get("chatColor"), '"'..text..'"')
+		chat.AddText(Color(150, 0, 0), '[CITY-BROADCAST] '..speaker:Nick()..' broadcasts ', ix.config.Get("chatColor"), '"'..text..'"')
 	end,
 	CanHear = function(self, speaker, listener)
 		PlayEventSound("ambient/alarms/warningbell1.wav")
@@ -32,7 +32,7 @@ ix.chat.Register("radio", {
 	end,
 	OnChatAdd = function(self, speaker, text)
 		if ( speaker ) then
-			chat.AddText(Material("willardnetworks/chat/cmb_shared_icon.png"), Color(0,138,216), speaker:Nick().." radios in " ..text.. " [TAC-3]")
+			chat.AddText(Color(0,138,216), speaker:Nick().." radios in " ..text.. " [TAC-3]")
 		end
 	end,
 	CanHear = function(self, speaker, listener)
@@ -49,6 +49,32 @@ ix.chat.Register("radio", {
 	deadCanChat = false
 })
 
+ix.chat.Register("vortessence", {
+	CanSay = function(self, speaker, text)
+		if not (speaker:Isvortigaunt()) then
+			speaker:Notify("Only the Vorts can talk in vortessence!")
+			return false
+		end
+	end,
+	OnChatAdd = function(self, speaker, text)
+		if ( speaker ) then
+			chat.AddText(Color(0,128,0), speaker:Nick().." speaks though Vortessence: " ..text)
+		end
+	end,
+	CanHear = function(self, speaker, listener)
+		if not (listener:Isvortigaunt()) then
+			return false
+		else 
+			return true
+		end
+	end,
+	prefix = {"/vortessence", "/v"},
+	description = "Speak in the Vortessence",
+	indicator = "chatPerforming",
+	font = "RadioFont",
+	deadCanChat = false
+})
+
 ix.chat.Register("ptradio", {
     CanSay = function(self, speaker, text)
         if not (speaker:IsCombine() and speaker:GetSquad()) then
@@ -58,7 +84,7 @@ ix.chat.Register("ptradio", {
     end,
     OnChatAdd = function(self, speaker, text)
         if speaker then
-            chat.AddText(Material("willardnetworks/chat/cmb_shared_icon.png"), Color(147, 112, 219), speaker:Nick() .. " radios in " .. text .. " [" .. speaker:GetNetVar("squad", "N/A") .. "]")
+            chat.AddText(Color(147, 112, 219), speaker:Nick() .. " radios in " .. text .. " [" .. speaker:GetNetVar("squad", "N/A") .. "]")
         end
     end,
     CanHear = function(self, speaker, listener)
@@ -88,7 +114,7 @@ ix.chat.Register("importantradio", {
 	end,
 	OnChatAdd = function(self, speaker, text)
 		if ( speaker ) then
-			chat.AddText(Material("willardnetworks/chat/dispatch_icon.png"), Color(250, 20, 20), speaker:Nick().." [SENDS A COMMAND MESSAGE]: ", text)
+			chat.AddText(Color(250, 20, 20), speaker:Nick().." [SENDS A COMMAND MESSAGE]: ", text)
 		end
 	end,
 	CanHear = function(self, speaker, listener)
@@ -116,7 +142,7 @@ ix.chat.Register("commandradio", {
 	end,
 	OnChatAdd = function(self, speaker, text)
 		if ( speaker ) then
-			chat.AddText(Material("willardnetworks/chat/dispatch_icon.png"), Color(250, 20, 20), speaker:Nick().." radios in command freq. [" ..text.. "]")
+				chat.AddText(Color(250, 20, 20), speaker:Nick().." radios in command freq. [" ..text.. "]")
 		end
 	end,
 	CanHear = function(self, speaker, listener)
@@ -143,7 +169,7 @@ ix.chat.Register("dispatchradio", {
 	end,
 	OnChatAdd = function(self, speaker, text)
 		if ( speaker ) then
-			chat.AddText(Material("willardnetworks/chat/dispatch_icon.png"), Color(200, 50, 50), "Dispatch radios in ", text)
+			chat.AddText(Color(200, 50, 50), "Dispatch radios in ", text)
 		end
 	end,
 	CanHear = function(self, speaker, listener)
@@ -185,7 +211,7 @@ ix.chat.Register("dispatch", {
 ix.chat.Register("dispatchradioforce", {
 	OnChatAdd = function(self, speaker, text)
 		if ( speaker ) then
-			chat.AddText(Material("willardnetworks/chat/dispatch_icon.png"), Color(200, 50, 50), "Dispatch radios in <:: "..text.." ::>")
+			chat.AddText(Color(200, 50, 50), "Dispatch radios in <:: "..text.." ::>")
 		end
 	end,
 	CanHear = function(self, speaker, listener)
@@ -202,11 +228,42 @@ ix.chat.Register("dispatchradioforce", {
 ix.chat.Register("dispatchperson", {
 	OnChatAdd = function(self, speaker, text)
 		if ( speaker ) then
-			chat.AddText(Material("willardnetworks/chat/ca_radio_icon.png"), Color(81, 88, 146), "Dispatch radios from "..speaker:Nick().." radio: "..text)
+			chat.AddText(Color(81, 88, 146), "Dispatch radios from "..speaker:Nick().." radio: "..text)
 		end
 	end,
 	CanHear = ix.config.Get("chatRange", 280),
 	font = "RadioFont",
+})
+
+ix.chat.Register("slurred", {
+    format = "%s slurs, \"%s\"",
+    description = "Slur your words.",
+    indicator = "chatTalking",
+    font = "ixChatFont",
+    prefix = {"/Slur"},
+    CanSay = function(self, speaker, text)
+        -- You can add conditions here, like checking if the speaker is drunk.
+        -- Example: if not speaker:IsDrunk() then return false end
+        return true
+    end,
+    OnChatAdd = function(self, speaker, text)
+        local slurredText = string.gsub(text, "([AEIOUaeiou])", function(vowel)
+            return vowel .. vowel:rep(math.random(1, 2)) -- Duplicate vowels to simulate slurring
+        end)
+        
+        -- Further modify the text to simulate slurring
+        slurredText = string.gsub(slurredText, "([SsTt])", function(consonant)
+            return consonant .. "h" -- Add 'h' after s/t for a more slurred effect
+        end)
+
+        local name = IsValid(speaker) and speaker:Name() or "Unknown"
+        chat.AddText(self:GetColor(speaker, text), string.format(self.format, name, slurredText))
+    end,
+    GetColor = function(self, speaker, text)
+        -- Return a color based on conditions or a default color
+        return Color(150, 125, 100) -- Example color, modify as needed
+    end,
+    CanHear = ix.config.Get("chatRange", 280)
 })
 
 --[[---------------------------------------------------------------------------
@@ -215,38 +272,34 @@ ix.chat.Register("dispatchperson", {
 
 function Schema:InitializedChatClasses()
 	ix.chat.Register("ic", {
-		format = " \"%s\"",
+		format = "%s says \"%s\"",
 		indicator = "chatTalking",
 		font = "ixCustomChatFont",
 		GetColor = function(self, speaker, text)
 			if (LocalPlayer():GetEyeTrace().Entity == speaker) then
 				return ix.config.Get("chatListenColor")
 			end
-
+	
 			return ix.config.Get("chatColor")
 		end,
 		OnChatAdd = function(self, speaker, text, anonymous, info)
 			local color = self:GetColor(speaker, text, info)
 			local name = anonymous and L"someone" or hook.Run("GetCharacterName", speaker, "ic") or (IsValid(speaker) and speaker:Name() or "Console")
-
-			if (speaker.ixBandanaEquipped) then
+	
+			if (speaker.ixBandanaEquipped or speaker.ixGasmaskEquipped) then
 				name = "Masked Person"
 			end
-
-			if (speaker.ixGasmaskEquipped) then
-				name = "Masked Person"
-			end
-
-
-			-- to you - inspired by willard networks
+	
 			local lookingAt = speaker:GetEyeTraceNoCursor().Entity == LocalPlayer()
-
-			chat.AddText(team.GetColor(speaker:Team()), name, color, " says", lookingAt and " to you" or "", string.format(self.format, text))
+			local teamColor = team.GetColor(speaker:Team())
+			local teamColorStr = string.format("%d,%d,%d", teamColor.r, teamColor.g, teamColor.b)
+	
+		--	Schema:SendCaption("<clr:" .. teamColorStr .. ">" .. string.format(self.format, name, text))
+			chat.AddText(teamColor, name, color, " says", lookingAt and " to you" or "", string.format(" \"%s\"", text))
 		end,
 		CanHear = ix.config.Get("chatRange", 280)
 	})
-
-
+	
 	ix.chat.Register("w", {
 		format = " \"%s\"",
 		indicator = "chatWhispering",
@@ -268,7 +321,7 @@ function Schema:InitializedChatClasses()
 			-- to you - inspired by willard networks
 			local lookingAt = speaker:GetEyeTraceNoCursor().Entity == LocalPlayer()
 
-			chat.AddText(Material("willardnetworks/chat/whisper_icon.png"), team.GetColor(speaker:Team()), name, color, " whispers", lookingAt and " to you" or "", string.format(self.format, text))
+			chat.AddText(team.GetColor(speaker:Team()), name, color, " whispers", lookingAt and " to you" or "", string.format(self.format, text))
 		end,
 		CanHear = ix.config.Get("chatRange", 280) * 0.5
 	})
@@ -295,7 +348,7 @@ function Schema:InitializedChatClasses()
 			-- to you - inspired by willard networks
 			local lookingAt = speaker:GetEyeTraceNoCursor().Entity == LocalPlayer()
 
-			chat.AddText(Material("willardnetworks/chat/yell_icon.png"), team.GetColor(speaker:Team()), name, color, " yells", lookingAt and " at you" or "", string.format(self.format, text))
+			chat.AddText(team.GetColor(speaker:Team()), name, color, " yells", lookingAt and " at you" or "", string.format(self.format, text))
 		end,
 		CanHear = ix.config.Get("chatRange", 280) * 2
 	})
@@ -319,7 +372,7 @@ function Schema:InitializedChatClasses()
 				name = "Masked Person"
 			end
 
-			chat.AddText(Material("willardnetworks/hud/stamina.png"), color, string.format(self.format, name, text))
+			chat.AddText(color, string.format(self.format, name, text))
 		end,
 		CanHear = ix.config.Get("chatRange", 280) * 2
 	})

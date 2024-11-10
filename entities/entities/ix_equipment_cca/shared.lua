@@ -1,0 +1,10 @@
+ENT.Type = "anim"
+ENT.Base = "base_ai"
+ENT.PrintName = "Equipment Vendor"
+ENT.Author = "Wade"
+ENT.Category = "IX:HL2RP"
+ENT.Spawnable = true
+ENT.AdminSpawnable = true
+ENT.bNoPersist = false
+ENT.AutomaticFrameAdvance = true
+ENT.AdminOnly = true

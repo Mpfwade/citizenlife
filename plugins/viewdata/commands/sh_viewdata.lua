@@ -21,7 +21,8 @@ ix.command.Add("ViewData", {
 
 		local data = target:GetData("record", {})
 		local cid = target:GetData("cid", 00000)
+		local unique = target:GetData("employment", 20)
 
-		netstream.Start(client, "ixViewData", target:GetPlayer(), cid, data)
+		netstream.Start(client, "ixViewData", target:GetPlayer(), cid, unique, data)
 	end;
 })

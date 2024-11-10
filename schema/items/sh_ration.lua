@@ -6,6 +6,7 @@ ITEM.skin = 0
 ITEM.noBusiness = true
 ITEM.exRender = true
 ITEM.bDropOnDeath = true
+ITEM.weight = 2.26
 
 ITEM.iconCam = {
     pos = Vector(1.96, 5.95, 199.77),

@@ -14,7 +14,6 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ]]
 
--- Don't bother DMing me to add female variants, do it yourself.
 PLUGIN.gestures = { -- Mainly for the citizen_male models, or models that include the citizen male gestures
     -- citizen rp go brrrr...
     {gesture = "g_salute", command = "Salute", id = 1444},
@@ -52,11 +51,29 @@ PLUGIN.gestures = { -- Mainly for the citizen_male models, or models that includ
     --{gesture = "hg_nod_right", command = "HeadRight", id = 1473},
 }
 
-function PLUGIN:DoAnimationEvent(ply, event, data)
-    if ( event == PLAYERANIMEVENT_CUSTOM_GESTURE ) then
-        for k, v in pairs(PLUGIN.gestures) do
-            if ( data == v.id ) then
-                ply:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, ply:LookupSequence(v.gesture), 0, true)
+if (SERVER) then
+-- Don't bother DMing me to add female variants, do it yourself.
+
+function PLUGIN:DoAnimationEvent(player, event, data)
+    if event == PLAYERANIMEVENT_CUSTOM_GESTURE then
+        for _, gesture in pairs(self.gestures) do
+            if data == gesture.id then
+                if player.isAnimating then return end
+                net.Start("PlayerGesture")
+                net.WriteEntity(player)
+                net.WriteUInt(gesture.id, 16) -- Use 16 bits to send the gesture ID
+                net.Broadcast()
+
+                -- Apply the gesture to the initiating player
+                player:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, player:LookupSequence(gesture.gesture), 0, true)
+                player.isAnimating = true
+
+                -- Reset the animation state after the duration of the animation
+                timer.Simple(player:SequenceDuration(), function()
+                    if IsValid(player) then
+                        player.isAnimating = false
+                    end
+                end)
 
                 return ACT_INVALID
             end
@@ -71,6 +88,7 @@ for k, v in pairs(PLUGIN.gestures) do
     commandname = string.Replace(commandname, "_", " ")
 
     concommand.Add("ix_act_"..v.command, function(ply, cmd, args)
+        if ply.isAnimating then return end -- Prevent playing a new animation if one is already active
         ply:DoAnimationEvent(v.id)
     end)
 
@@ -92,14 +110,15 @@ for k, v in pairs(PLUGIN.gestures) do
     })
 end
 
-if ( SERVER ) then
+    util.AddNetworkString("PlayerGesture")
+
     local allowedChatTypes = {
         ["ic"] = true,
         ["w"] = true,
         ["y"] = true,
     }
 
-    local RandomAnims = {"ix_act_armsout", "ix_act_no", "ix_act_nosmall", "ix_act_plead", "ix_act_point", "ix_act_pointswing", "ix_act_chestup", "ix_act_fistleft", "ix_act_present", "ix_act_headleft", "ix_act_headright"}
+    local RandomAnims = {"ix_act_armsout", "ix_act_no", "ix_act_nosmall", "ix_act_plead", "ix_act_point", "ix_act_chestup", "ix_act_fistleft", "ix_act_present", "ix_act_headleft", "ix_act_headright"}
     local WhatAnims = {"ix_act_what", "ix_act_shrug"}
     function PLUGIN:PrePlayerMessageSend(ply, chatType, message, bAnonymous)
         if ( allowedChatTypes[chatType] ) then
@@ -120,4 +139,30 @@ if ( SERVER ) then
             end
         end
     end
+end
+
+if CLIENT then
+    net.Receive("PlayerGesture", function()
+        local player = net.ReadEntity()
+        local gestureId = net.ReadUInt(16)
+    
+        if IsValid(player) and not player.isAnimating then
+            for _, gesture in pairs(PLUGIN.gestures) do
+                if gestureId == gesture.id then
+                    -- Apply the gesture to the player
+                    player:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, player:LookupSequence(gesture.gesture), 0, true)
+                    player.isAnimating = true
+    
+                    -- Reset the animation state after the duration
+                    timer.Simple(player:SequenceDuration(), function()
+                        if IsValid(player) then
+                            player.isAnimating = false
+                        end
+                    end)
+    
+                    break
+                end
+            end
+        end
+    end)
 end

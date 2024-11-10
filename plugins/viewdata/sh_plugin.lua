@@ -15,7 +15,7 @@ VIEWDATA_UPDATEVAR = 4
 
 -- Default viewdata note.
 PLUGIN.defaultNote = [[
-This is the default note
+No Recorded Record As Of Now
 ]]
 
 ix.util.Include("sv_hooks.lua")

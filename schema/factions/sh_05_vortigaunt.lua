@@ -16,8 +16,6 @@ FACTION.models = {
 FACTION.isGloballyRecognized = true
 FACTION.isDefault = false
 
-FACTION.payTime = 600
-FACTION.pay = 0
 
 --[[ Custom Config ]]--
 

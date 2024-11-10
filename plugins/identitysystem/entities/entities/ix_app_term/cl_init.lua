@@ -1,0 +1,189 @@
+include("shared.lua")
+local imgui = include("imgui.lua")
+
+-- Menu state and current option index variable
+ENT.menuState = "main" -- Possible values: "main", "second"
+ENT.currentOptionIndex = 1 -- Current option being displayed on the second menu
+
+function ENT:OpenSecondMenu()
+    self.menuState = "second" -- Switch to the second menu
+    self.currentOptionIndex = 1 -- Reset to first option when opening the second menu
+end
+
+function ENT:OpenMainMenu()
+    self.menuState = "main" -- Switch back to the main menu
+end
+
+-- Quiz Data
+local quizQuestions = {
+    {
+        question = "What is the capital of France?",
+        answers = {"Paris", "London", "Berlin", "Rome"},
+        correct = 1
+    },
+    -- Add more questions as needed
+}
+
+local function OpenenlistmentMenu()
+    print("OpenenlistmentMenu function called") -- Debug print at the start 
+        
+    -- Create the main frame for the quiz menu
+    local frame = vgui.Create("DFrame")
+    frame:SetTitle("Quiz")
+    frame:SetSize(400, 300)
+    frame:Center()
+    frame:MakePopup()
+
+    -- "Yes" Button
+    local yesButton = vgui.Create("DButton", frame)
+    yesButton:SetText("Yes")
+    yesButton:SetSize(100, 40)
+    yesButton:SetPos(50, 200)
+    yesButton.DoClick = function()
+        print("Yes button clicked") -- Debug print
+        OpenQuizMenu()
+    end
+
+    -- "No" Button
+    local noButton = vgui.Create("DButton", frame)
+    noButton:SetText("No")
+    noButton:SetSize(100, 40)
+    noButton:SetPos(250, 200)
+    noButton.DoClick = function()
+        print("No button clicked") -- Debug print
+        frame:Close() -- Close the quiz menu frame
+    end
+
+end
+
+-- Function to Open Quiz Menu
+local function OpenQuizMenu()
+    local frame = vgui.Create("DFrame")
+    frame:SetTitle("Quiz")
+    frame:SetSize(400, 300)
+    frame:Center()
+    frame:MakePopup()
+
+    local scrollPanel = vgui.Create("DScrollPanel", frame)
+    scrollPanel:Dock(FILL)
+
+    local userAnswers = {} -- Table to store user answers
+
+    for qIndex, q in ipairs(quizQuestions) do
+        local questionPanel = vgui.Create("DPanel", scrollPanel)
+        questionPanel:Dock(TOP)
+        questionPanel:SetHeight(50)
+
+        local questionLabel = vgui.Create("DLabel", questionPanel)
+        questionLabel:SetText(q.question)
+        questionLabel:Dock(TOP)
+
+        for i, ans in ipairs(q.answers) do
+            local answerButton = vgui.Create("DButton", questionPanel)
+            answerButton:SetText(ans)
+            answerButton:Dock(TOP)
+            answerButton.DoClick = function()
+                userAnswers[qIndex] = i -- Store the answer index
+            end
+        end
+    end
+
+    local submitButton = vgui.Create("DButton", frame)
+    submitButton:SetText("Submit Quiz")
+    submitButton:Dock(BOTTOM)
+    submitButton.DoClick = function()
+        -- Here you can handle the evaluation of the quiz
+        for i, ans in ipairs(userAnswers) do
+            if quizQuestions[i].correct == ans then
+                print("Question " .. i .. ": Correct")
+            else
+                print("Question " .. i .. ": Incorrect")
+            end
+        end
+        frame:Close() -- Close the quiz
+    end
+end
+
+function ENT:DrawSecondMenu()
+    -- Start the IMGUI context for the second menu
+    if imgui.Entity3D2D(self, Vector(13, 0, 0), Angle(0, 90, 90), 0.1) then
+        -- Draw the second menu background
+        surface.SetDrawColor(Color(40, 40, 40, 245))
+        surface.DrawRect(-70, -190, 170, 150)
+
+        -- Load and display the corresponding image for the current option
+        local images = {
+            "citizenlifestuff/combine/apclogocitizenlife.png",  -- Image for Option 1
+            "path/to/permit_image.png",      -- Image for Option 2
+            "path/to/loan_image.png"         -- Image for Option 3
+        }
+        local image = Material(images[self.currentOptionIndex])
+        if image then
+            surface.SetMaterial(image)
+            surface.SetDrawColor(255, 255, 255, 255)
+            local imageWidth, imageHeight = 100, 50 -- Adjust size as needed
+            surface.DrawTexturedRect(-imageWidth / 2, -180, imageWidth, imageHeight)
+        end
+
+        -- Arrow buttons for option selection
+        if imgui.xTextButton("<", "RadioFont", -70, -130, 20, 20) then
+            self.currentOptionIndex = (self.currentOptionIndex - 2) % 3 + 1 -- Cycle backwards through options
+        end
+        if imgui.xTextButton(">", "RadioFont", 70, -130, 20, 20) then
+            self.currentOptionIndex = self.currentOptionIndex % 3 + 1 -- Cycle forwards through options
+        end
+
+        -- Display and handle the current option
+        if self.currentOptionIndex == 1 and imgui.xTextButton("Enlistment Application", "RadioFont", -40, -130, 100, 25) then
+            OpenEnlistmentMenu()
+            -- Handle Option 1 selection
+        elseif self.currentOptionIndex == 2 and imgui.xTextButton("Permit Application", "RadioFont", -40, -130, 100, 25) then
+            -- Handle Option 2 selection
+        elseif self.currentOptionIndex == 3 and imgui.xTextButton("Loan Application", "RadioFont", -40, -130, 100, 25) then
+            -- Handle Option 3 selection
+        end
+
+        -- Back button
+        if imgui.xTextButton("Back", "RadioFont", -40, -100, 100, 25) then
+            self:OpenMainMenu()
+        end
+
+        imgui.End3D2D()
+    end
+end
+
+function ENT:Draw()
+    self:DrawModel()
+
+    if self.menuState == "main" then
+        -- Main menu drawing code
+        if imgui.Entity3D2D(self, Vector(13, 0, 0), Angle(0, 90, 90), 0.1) then
+            -- Draw basic menu rectangle
+            surface.SetDrawColor(Color(4, 116, 152, 245))
+            surface.DrawRect(-70, -190, 170, 150)
+
+            -- Load and draw the logo
+            local logo = Material("citizenlifestuff/combine/combinelogo.png")
+            if logo then
+                surface.SetMaterial(logo)
+                surface.SetDrawColor(255, 255, 255, 255)
+                local logoWidth, logoHeight = 100, 90 -- Logo size
+                surface.DrawTexturedRect(-logoWidth / 2, -190, logoWidth, logoHeight)
+            end
+
+            -- Draw imgui button for opening second menu
+            if imgui.xTextButton("Insert CID", "RadioFont", -40, -90, 100, 25, 1, Color(13, 151, 177), Color(55, 195, 192)) then
+                self:OpenSecondMenu()
+            end
+
+            local scanlinesMat = Material("citizenlifestuff/scanlines.png")
+            surface.SetMaterial(scanlinesMat)
+            surface.SetDrawColor(255, 255, 255, 25)
+            surface.DrawTexturedRect(-70, -190, 170, 150)
+
+            imgui.End3D2D()
+        end
+    elseif self.menuState == "second" then
+        self:DrawSecondMenu()
+    end
+end

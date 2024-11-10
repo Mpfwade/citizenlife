@@ -2,7 +2,7 @@ local PLUGIN = PLUGIN
 
 function PLUGIN:PlayerLoadedCharacter(client, character)
     if client:Team() == FACTION_CCA then
-        local newQuotaMax = math.random(3, 10)
+        local newQuotaMax = 8
         client:SetData("quota", 0)
         character:SetData("quotamax", newQuotaMax)
         character:SetData("quota", 0)
@@ -24,15 +24,15 @@ function PLUGIN:EntityTakeDamage(target, dmginfo)
     if not attacker:IsPlayer() or attacker:Team() ~= FACTION_CCA then return end
 
     local quotaamount = attacker:GetData("quota") or 0
-    local quotamax = attacker:GetData("quotamax") or 3
+    local quotamax = attacker:GetData("quotamax") or 8
 
     if quotaamount >= quotamax then return end
 
-    if target:Team() == FACTION_CITIZEN and (attacker:GetActiveWeapon():GetClass() == "ix_hands" or attacker:GetActiveWeapon():GetClass() == "ix_stunstick") then
+    if IsValid(target) and IsValid(attacker) and target:Team() == FACTION_CITIZEN and (attacker:GetActiveWeapon():GetClass() == "ix_hands" or attacker:GetActiveWeapon():GetClass() == "ix_stunstick") then
         attacker:SetData("quota", quotaamount + 1)
 
         if quotaamount + 1 >= quotamax then
-            Schema:AddCombineDisplayMessage("Beating quota complete.", true)
+            Schema:AddCombineDisplayMessage(attacker:Nick() .. " has completed their Beating Quota.", Color(0,255,255))
             local character = attacker:GetCharacter()
             character:SetData("quota", 0)
 
@@ -41,9 +41,9 @@ function PLUGIN:EntityTakeDamage(target, dmginfo)
             character:SetData("quotamax", newQuotaMax)
             attacker:SetRP(1 + attacker:GetNWInt("ixRP"))
 
-            timer.Create("ResetQuotaTimer", 900, 1, function()
+            timer.Create("ResetQuotaTimer", 780, 1, function()
                 attacker:SetData("quota", 0)
-                Schema:AddCombineDisplayMessage("Your beating Quota has been reset.", true)
+                Schema:AddCombineDisplayMessage(attacker:Nick() .. " Beating Quota has been reset.", Color(0,255,255))
             end)
         end
     end

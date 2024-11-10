@@ -8,6 +8,7 @@ ITEM.bDropOnDeath = true
 
 ITEM.model = "models/weapons/w_crossbow.mdl"
 ITEM.skin = 0
+ITEM.weight = 13.6
 
 -- Item Inventory Size Configuration
 

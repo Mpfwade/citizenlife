@@ -13,7 +13,6 @@ ENT.Category 		= "IX:HL2RP"
 ENT.AutomaticFrameAdvance = true
 ENT.Spawnable = true
 ENT.AdminOnly = true
-ENT.bNoPersist = true
 
 function ENT:SetupDataTables()
 	self:NetworkVar("Float", 0, "RationTime")
@@ -27,7 +26,7 @@ end
 
 if ( SERVER ) then
 	function ENT:Initialize()
-		self:SetModel("models/props_junk/watermelon01.mdl")
+		self:SetModel("models/props_combine/health_charger001.mdl")
 	
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:PhysicsInit(SOLID_VPHYSICS)
@@ -121,6 +120,7 @@ if ( SERVER ) then
 	
 			timer.Create("ration_" .. self:EntIndex(), duration, 1, function()
 				if (!IsValid(self)) then return end
+				if ix.config.Get("cityCode") > 1 then return end
 	
 				local dispenser = self.dispenser
 				local entity = self:CreateDummyRation()
@@ -187,35 +187,54 @@ if ( SERVER ) then
 	end
 	
 	function ENT:Use(activator, caller)
-		local char = activator:GetCharacter()
-		if (activator:IsPlayer() and activator:GetEyeTraceNoCursor().Entity == self) then
-			local curTime = CurTime()
-			local unixTime = os.time()
-
-	
-			if (!self.nextUse or curTime >= self.nextUse) then
-				if (!self:IsLocked() and (activator:GetNWBool("ixActiveBOL", false) == false) and (GetGlobalBool("ixRationOnline", true) == true) and unixTime >= char:GetData("NextRation", 0) ) then
-					if (!self.nextActivateRation or curTime >= self.nextActivateRation) then
-						self:ActivateRation(activator)
-						char:SetData("NextRation", unixTime + 3600)
-						activator:Freeze(true)
-						timer.Simple(6, function()
-						activator:ForceSequence("takepackage", nil, nil, true)
-						end)
-						timer.Simple(8, function()
-							activator:Freeze(false)
-							activator:LeaveSequence()
-
-						end)
-					end
-				else
-					self:SetFlashDuration(3)
-				end
-	
-				self.nextUse = curTime + 3
-			end
+		if not activator:IsPlayer() or activator:GetEyeTraceNoCursor().Entity ~= self then
+			return
 		end
-	end
+	
+		local char = activator:GetCharacter()
+		if not char then return end
+	
+		local curTime = CurTime()
+		local unixTime = os.time()
+	
+		-- Check if the player is a member of the FACTION_CCA
+		local isCCA = char:GetFaction() == FACTION_CCA
+		local nextRationTime = char:GetData("NextRation", 0)
+	
+		if self.nextUse and curTime < self.nextUse then
+			self:SetFlashDuration(3)
+			return
+		end
+	
+		-- Check for city code and if the machine is locked
+		if self:IsLocked() or ix.config.Get("cityCode", 0) > 1 or not GetGlobalBool("ixRationOnline", true) or unixTime < nextRationTime then
+			self:SetFlashDuration(3)
+			return
+		end
+	
+		self:ActivateRation(activator)
+		self.nextUse = curTime + 3
+	
+		-- Apply cooldown specifically for FACTION_CCA members
+		if isCCA then
+			char:SetData("NextRation", unixTime + 3600) -- Adjust the cooldown time as needed
+		else
+			char:SetData("NextRation", unixTime + 3600) -- Set cooldown for other factions
+		end
+	
+		activator:Freeze(true)
+		timer.Simple(6, function()
+			if IsValid(activator) then
+				activator:ForceSequence("takepackage", nil, nil, true)
+			end
+		end)
+		timer.Simple(8, function()
+			if IsValid(activator) then
+				activator:Freeze(false)
+				activator:LeaveSequence()
+			end
+		end)
+	end	
 	
 	function ENT:CanTool(player, trace, tool)
 		return false

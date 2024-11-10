@@ -1,6 +1,4 @@
-
 AddCSLuaFile()
-
 ENT.Type = "anim"
 ENT.PrintName = "Forcefield"
 ENT.Category = "HL2 RP"
@@ -9,289 +7,281 @@ ENT.AdminOnly = true
 ENT.RenderGroup = RENDERGROUP_BOTH
 ENT.PhysgunDisabled = true
 ENT.bNoPersist = true
-
 function ENT:SetupDataTables()
-	self:NetworkVar("Int", 0, "Mode")
-	self:NetworkVar("Entity", 0, "Dummy")
+    self:NetworkVar("Int", 0, "Mode")
+    self:NetworkVar("Entity", 0, "Dummy")
 end
 
 local MODE_ALLOW_ALL = 1
 local MODE_ALLOW_CID = 2
 local MODE_ALLOW_NONE = 3
+if SERVER then
+    function ENT:SpawnFunction(client, trace)
+        local angles = (client:GetPos() - trace.HitPos):Angle()
+        angles.p = 0
+        angles.r = 0
+        angles:RotateAroundAxis(angles:Up(), 270)
+        local entity = ents.Create("ix_forcefield")
+        entity:SetPos(trace.HitPos + Vector(0, 0, 40))
+        entity:SetAngles(angles:SnapTo("y", 90))
+        entity:Spawn()
+        entity:Activate()
+        Schema:SaveForceFields()
+        return entity
+    end
 
-if (SERVER) then
-	function ENT:SpawnFunction(client, trace)
-		local angles = (client:GetPos() - trace.HitPos):Angle()
-		angles.p = 0
-		angles.r = 0
-		angles:RotateAroundAxis(angles:Up(), 270)
+    function ENT:Initialize()
+        self:SetModel("models/props_combine/combine_fence01b.mdl")
+        self:SetSolid(SOLID_VPHYSICS)
+        self:SetUseType(SIMPLE_USE)
+        self:PhysicsInit(SOLID_VPHYSICS)
+        local data = {}
+        data.start = self:GetPos() + self:GetRight() * -16
+        data.endpos = self:GetPos() + self:GetRight() * -480
+        data.filter = self
+        local trace = util.TraceLine(data)
+        local angles = self:GetAngles()
+        angles:RotateAroundAxis(angles:Up(), 90)
+        self.dummy = ents.Create("prop_physics")
+        self.dummy:SetModel("models/props_combine/combine_fence01a.mdl")
+        self.dummy:SetPos(trace.HitPos)
+        self.dummy:SetAngles(self:GetAngles())
+        self.dummy:Spawn()
+        self.dummy.PhysgunDisabled = true
+        self:DeleteOnRemove(self.dummy)
+        self:SetDummy(self.dummy)
+        local verts = {
+            {
+                pos = Vector(0, 0, -25)
+            },
+            {
+                pos = Vector(0, 0, 150)
+            },
+            {
+                pos = self:WorldToLocal(self.dummy:GetPos()) + Vector(0, 0, 150)
+            },
+            {
+                pos = self:WorldToLocal(self.dummy:GetPos()) + Vector(0, 0, 150)
+            },
+            {
+                pos = self:WorldToLocal(self.dummy:GetPos()) - Vector(0, 0, 25)
+            },
+            {
+                pos = Vector(0, 0, -25)
+            }
+        }
 
-		local entity = ents.Create("ix_forcefield")
-		entity:SetPos(trace.HitPos + Vector(0, 0, 40))
-		entity:SetAngles(angles:SnapTo("y", 90))
-		entity:Spawn()
-		entity:Activate()
+        self:PhysicsFromMesh(verts)
+        local physObj = self:GetPhysicsObject()
+        if IsValid(physObj) then
+            physObj:EnableMotion(false)
+            physObj:Sleep()
+        end
 
-		Schema:SaveForceFields()
-		return entity
-	end
+        self:SetCustomCollisionCheck(true)
+        self:EnableCustomCollisions(true)
+        self:SetDummy(self.dummy)
+        physObj = self.dummy:GetPhysicsObject()
+        if IsValid(physObj) then
+            physObj:EnableMotion(false)
+            physObj:Sleep()
+        end
 
-	function ENT:Initialize()
-		self:SetModel("models/props_combine/combine_fence01b.mdl")
-		self:SetSolid(SOLID_VPHYSICS)
-		self:SetUseType(SIMPLE_USE)
-		self:PhysicsInit(SOLID_VPHYSICS)
+        self:SetMoveType(MOVETYPE_NOCLIP)
+        self:SetMoveType(MOVETYPE_PUSH)
+        self:MakePhysicsObjectAShadow()
+        self:SetMode(MODE_ALLOW_ALL)
+    end
 
-		local data = {}
-			data.start = self:GetPos() + self:GetRight() * -16
-			data.endpos = self:GetPos() + self:GetRight() * -480
-			data.filter = self
-		local trace = util.TraceLine(data)
+    function ENT:Think()
+        if (self.nextTerminalCheck or 0) < CurTime() then
+            self:StopSound("ambient/machines/combine_shield_loop3.wav")
+            self:EmitSound("ambient/machines/combine_shield_loop3.wav", 75)
+            self.nextTerminalCheck = CurTime() + 30
+        elseif self:GetMode() == 1 then
+            self:StopSound("ambient/machines/combine_shield_loop3.wav")
+        end
+    end
 
-		local angles = self:GetAngles()
-		angles:RotateAroundAxis(angles:Up(), 90)
+    function ENT:OnRemove()
+        self:StopSound("ambient/machines/combine_shield_loop3.wav")
+    end
 
-		self.dummy = ents.Create("prop_physics")
-		self.dummy:SetModel("models/props_combine/combine_fence01a.mdl")
-		self.dummy:SetPos(trace.HitPos)
-		self.dummy:SetAngles(self:GetAngles())
-		self.dummy:Spawn()
-		self.dummy.PhysgunDisabled = true
-		self:DeleteOnRemove(self.dummy)
+    function ENT:StartTouch(entity)
+        if not self.buzzer then
+            self.buzzer = CreateSound(entity, "ambient/machines/combine_shield_touch_loop1.wav")
+            self.buzzer:Play()
+            self.buzzer:ChangeVolume(0.8, 0)
+        else
+            self.buzzer:ChangeVolume(0.8, 0.5)
+            self.buzzer:Play()
+        end
 
-		local verts = {
-			{pos = Vector(0, 0, -25)},
-			{pos = Vector(0, 0, 150)},
-			{pos = self:WorldToLocal(self.dummy:GetPos()) + Vector(0, 0, 150)},
-			{pos = self:WorldToLocal(self.dummy:GetPos()) + Vector(0, 0, 150)},
-			{pos = self:WorldToLocal(self.dummy:GetPos()) - Vector(0, 0, 25)},
-			{pos = Vector(0, 0, -25)}
-		}
+        self.entities = (self.entities or 0) + 1
+    end
 
-		self:PhysicsFromMesh(verts)
+    function ENT:EndTouch(entity)
+        self.entities = math.max((self.entities or 0) - 1, 0)
+        if self.buzzer and self.entities == 0 then self.buzzer:FadeOut(0.5) end
+    end
 
-		local physObj = self:GetPhysicsObject()
+    function ENT:OnRemove()
+        if self.buzzer then
+            self.buzzer:Stop()
+            self.buzzer = nil
+        end
 
-		if (IsValid(physObj)) then
-			physObj:EnableMotion(false)
-			physObj:Sleep()
-		end
+        if not ix.shuttingDown and not self.ixIsSafe then Schema:SaveForceFields() end
+    end
 
-		self:SetCustomCollisionCheck(true)
-		self:EnableCustomCollisions(true)
-		self:SetDummy(self.dummy)
+    local MODES = {
+        {function(client) return false end, "Off."},
+        {
+            function(client)
+                local character = client:GetCharacter()
+                if character and character:GetInventory() and not character:GetInventory():HasItem("cid") and not character:GetInventory():HasItem("cca_id") then
+                    return true
+                else
+                    return false
+                end
+            end,
+            "Only allow with valid CID."
+        },
+        {function(client) return true end, "Never allow citizens."}
+    }
 
-		physObj = self.dummy:GetPhysicsObject()
+    function ENT:Use(activator)
+        if (self.nextUse or 0) < CurTime() then
+            self.nextUse = CurTime() + 1.5
+        else
+            return
+        end
 
-		if (IsValid(physObj)) then
-			physObj:EnableMotion(false)
-			physObj:Sleep()
-		end
+        if activator:IsCombine() then
+            self:SetMode(self:GetMode() + 1)
+            if self:GetMode() > #MODES then
+                self:SetMode(1)
+                self:SetSkin(1)
+                self.dummy:SetSkin(1)
+                self:EmitSound("npc/turret_floor/die.wav")
+            else
+                self:SetSkin(0)
+                self.dummy:SetSkin(0)
+            end
 
-		self:SetMoveType(MOVETYPE_NOCLIP)
-		self:SetMoveType(MOVETYPE_PUSH)
-		self:MakePhysicsObjectAShadow()
-		self:SetMode(MODE_ALLOW_ALL)
-	end
+            self:EmitSound("buttons/combine_button5.wav", 140, 100 + (self:GetMode() - 1) * 15)
+            activator:ChatPrint("Changed barrier mode to: " .. MODES[self:GetMode()][2])
+            Schema:SaveForceFields()
+        else
+            self:EmitSound("buttons/combine_button3.wav")
+        end
+    end
 
-	function ENT:Think()
-		if (self.nextTerminalCheck or 0) < CurTime() then
-			self:StopSound("ambient/machines/combine_shield_loop3.wav")
-			self:EmitSound("ambient/machines/combine_shield_loop3.wav", 75)
-			self.nextTerminalCheck = CurTime() + 30
-		elseif self:GetMode() == 1 then
-			self:StopSound("ambient/machines/combine_shield_loop3.wav")
-		end
-	end
-	
-	function ENT:OnRemove()
-		self:StopSound("ambient/machines/combine_shield_loop3.wav")
-	end
+    hook.Add("ShouldCollide", "ix_forcefields", function(a, b)
+        local client
+        local entity
+        if (a:GetClass() == "prop_ragdoll") or (b:GetClass() == "prop_ragdoll") then return false end
+        if a:IsPlayer() then
+            client = a
+            entity = b
+        elseif b:IsPlayer() then
+            client = b
+            entity = a
+        end
 
-	function ENT:StartTouch(entity)
-		if (!self.buzzer) then
-			self.buzzer = CreateSound(entity, "ambient/machines/combine_shield_touch_loop1.wav")
-			self.buzzer:Play()
-			self.buzzer:ChangeVolume(0.8, 0)
-		else
-			self.buzzer:ChangeVolume(0.8, 0.5)
-			self.buzzer:Play()
-		end
-
-		self.entities = (self.entities or 0) + 1
-	end
-
-	function ENT:EndTouch(entity)
-		self.entities = math.max((self.entities or 0) - 1, 0)
-
-		if (self.buzzer and self.entities == 0) then
-			self.buzzer:FadeOut(0.5)
-		end
-	end
-
-	function ENT:OnRemove()
-		if (self.buzzer) then
-			self.buzzer:Stop()
-			self.buzzer = nil
-		end
-
-		if (!ix.shuttingDown and !self.ixIsSafe) then
-			Schema:SaveForceFields()
-		end
-	end
-
-	local MODES = {
-		{
-			function(client)
-				return false
-			end,
-			"Off."
-		},
-		{
-			function(client)
-				local character = client:GetCharacter()
-
-				if (character and character:GetInventory() and !character:GetInventory():HasItem("cid")) then
-					return true
-				else
-					return false
-				end
-			end,
-			"Only allow with valid CID."
-		},
-		{
-			function(client)
-				return true
-			end,
-			"Never allow citizens."
-		}
-	}
-
-	function ENT:Use(activator)
-		if ((self.nextUse or 0) < CurTime()) then
-			self.nextUse = CurTime() + 1.5
-		else
-			return
-		end
-
-		if (activator:IsCombine()) then
-			self:SetMode(self:GetMode() + 1)
-
-			if (self:GetMode() > #MODES) then
-				self:SetMode(1)
-
-				self:SetSkin(1)
-				self.dummy:SetSkin(1)
-				self:EmitSound("npc/turret_floor/die.wav")
-			else
-				self:SetSkin(0)
-				self.dummy:SetSkin(0)
-			end
-
-			self:EmitSound("buttons/combine_button5.wav", 140, 100 + (self:GetMode() - 1) * 15)
-			activator:ChatPrint("Changed barrier mode to: "..MODES[self:GetMode()][2])
-
-			Schema:SaveForceFields()
-		else
-			self:EmitSound("buttons/combine_button3.wav")
-		end
-	end
-
-	hook.Add("ShouldCollide", "ix_forcefields", function(a, b)
-		local client
-		local entity
-
-		if (a:IsPlayer()) then
-			client = a
-			entity = b
-		elseif (b:IsPlayer()) then
-			client = b
-			entity = a
-		end
-
-		if (IsValid(entity) and entity:GetClass() == "ix_forcefield") then
-			if (IsValid(client)) then
-				if (client:IsCombine() or client:Team() == FACTION_CA) then
-					return false
-				end
-
-				local mode = entity:GetMode() or 1
-
-				return istable(MODES[mode]) and MODES[mode][1](client)
-			else
-				return entity:GetMode() != 4
-			end
-		end
-	end)
+        if IsValid(entity) and entity:GetClass() == "ix_forcefield" then
+            local yes = entity:GetMode()
+            if IsValid(client) then
+                if client:IsCombine() or client:Team() == FACTION_CA then return false end
+                local mode = entity:GetMode() or 1
+                return istable(MODES[mode]) and MODES[mode][1](client)
+            else
+                return entity:GetMode() ~= 4
+            end
+        end
+    end)
 else
-	local SHIELD_MATERIAL = ix.util.GetMaterial("effects/combineshield/comshieldwall3")
+    local SHIELD_MATERIAL = ix.util.GetMaterial("effects/combineshield/comshieldwall3")
+    function ENT:Initialize()
+        local data = {}
+        data.start = self:GetPos() + self:GetRight() * -16
+        data.endpos = self:GetPos() + self:GetRight() * -480
+        data.filter = self
+        local trace = util.TraceLine(data)
+        self:EnableCustomCollisions(true)
+        self:PhysicsInitConvex({vector_origin, Vector(0, 0, 150), trace.HitPos + Vector(0, 0, 150), trace.HitPos})
+    end
 
-	function ENT:Initialize()
-		local data = {}
-			data.start = self:GetPos() + self:GetRight()*-16
-			data.endpos = self:GetPos() + self:GetRight()*-480
-			data.filter = self
-		local trace = util.TraceLine(data)
+    function ENT:Draw()
+        self:DrawModel()
+        if self:GetMode() == 1 then return end
+        local angles = self:GetAngles()
+        local matrix = Matrix()
+        matrix:Translate(self:GetPos() + self:GetUp() * -40)
+        matrix:Rotate(angles)
+        render.SetMaterial(SHIELD_MATERIAL)
+        local dummy = self:GetDummy()
+        if IsValid(dummy) then
+            local vertex = self:WorldToLocal(dummy:GetPos())
+            self:SetRenderBounds(vector_origin, vertex + self:GetUp() * 150)
+            cam.PushModelMatrix(matrix)
+            self:DrawShield(vertex)
+            cam.PopModelMatrix()
+            matrix:Translate(vertex)
+            matrix:Rotate(Angle(0, 180, 0))
+            cam.PushModelMatrix(matrix)
+            self:DrawShield(vertex)
+            cam.PopModelMatrix()
+        end
+    end
 
-		self:EnableCustomCollisions(true)
-		self:PhysicsInitConvex({
-			vector_origin,
-			Vector(0, 0, 150),
-			trace.HitPos + Vector(0, 0, 150),
-			trace.HitPos
-		})
-	end
+    function ENT:DrawShield(vertex)
+        mesh.Begin(MATERIAL_QUADS, 1)
+        mesh.Position(vector_origin)
+        mesh.TexCoord(0, 0, 0)
+        mesh.AdvanceVertex()
+        mesh.Position(self:GetUp() * 190)
+        mesh.TexCoord(0, 0, 3)
+        mesh.AdvanceVertex()
+        mesh.Position(vertex + self:GetUp() * 190)
+        mesh.TexCoord(0, 3, 3)
+        mesh.AdvanceVertex()
+        mesh.Position(vertex)
+        mesh.TexCoord(0, 3, 0)
+        mesh.AdvanceVertex()
+        mesh.End()
+    end
 
-	function ENT:Draw()
-		self:DrawModel()
+    function ENT:Think()
+        if self:GetMode() == MODE_ALLOW_ALL then return end
+        local dummy = self:GetDummy()
+        if not IsValid(dummy) then return end
+        local startPos = self:GetPos() + self:GetRight() * -16 + self:GetUp() * -30
+        local endPos = dummy:GetPos() + dummy:GetUp() * -30
+        local direction = (endPos - startPos):GetNormalized()
+        local length = startPos:Distance(endPos)
+        local numLights = math.ceil(length / 100)
+        for i = 0, numLights do
+            local pos = startPos + direction * (i * (length / numLights))
+            local dlight = DynamicLight(self:EntIndex() + i)
+            if dlight then
+                dlight.pos = pos
+                dlight.r = 0
+                dlight.g = 150
+                dlight.b = 255
+                dlight.brightness = 0
+                dlight.Decay = 1000
+                if i > 0 and i < numLights then
+                    dlight.Size = 1024
+                else
+                    dlight.Size = 512
+                end
 
-		if (self:GetMode() == 1) then
-			return
-		end
+                dlight.DieTime = CurTime() + 1
+            end
+        end
 
-		local angles = self:GetAngles()
-		local matrix = Matrix()
-		matrix:Translate(self:GetPos() + self:GetUp() * -40)
-		matrix:Rotate(angles)
-
-		render.SetMaterial(SHIELD_MATERIAL)
-
-		local dummy = self:GetDummy()
-
-		if (IsValid(dummy)) then
-			local vertex = self:WorldToLocal(dummy:GetPos())
-			self:SetRenderBounds(vector_origin, vertex + self:GetUp() * 150)
-
-			cam.PushModelMatrix(matrix)
-				self:DrawShield(vertex)
-			cam.PopModelMatrix()
-
-			matrix:Translate(vertex)
-			matrix:Rotate(Angle(0, 180, 0))
-
-			cam.PushModelMatrix(matrix)
-				self:DrawShield(vertex)
-			cam.PopModelMatrix()
-		end
-	end
-
-	function ENT:DrawShield(vertex)
-		mesh.Begin(MATERIAL_QUADS, 1)
-			mesh.Position(vector_origin)
-			mesh.TexCoord(0, 0, 0)
-			mesh.AdvanceVertex()
-
-			mesh.Position(self:GetUp() * 190)
-			mesh.TexCoord(0, 0, 3)
-			mesh.AdvanceVertex()
-
-			mesh.Position(vertex + self:GetUp() * 190)
-			mesh.TexCoord(0, 3, 3)
-			mesh.AdvanceVertex()
-
-			mesh.Position(vertex)
-			mesh.TexCoord(0, 3, 0)
-			mesh.AdvanceVertex()
-		mesh.End()
-	end
+        self:NextThink(CurTime() + 0.1)
+        return true
+    end
 end

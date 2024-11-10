@@ -26,8 +26,8 @@ SWEP.SlotPos = 1
 
 SWEP.CSMuzzleFlashes = false
 
-SWEP.ReloadSound = "weapons/yurie_rustalpha/pipeshotgun/waterpipe_reload.ogg"
-SWEP.EmptySound = ""
+SWEP.ReloadSound = "weapons/ar2/npc_ar2_reload.wav"
+SWEP.EmptySound = "weapons/shotgun/shotgun_empty.wav"
 
 SWEP.Primary.Sound = "weapons/shotgun/shotgun_dbl_fire.wav"
 SWEP.Primary.Recoil = 35

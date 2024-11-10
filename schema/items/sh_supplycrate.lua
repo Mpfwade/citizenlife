@@ -10,6 +10,7 @@ ITEM.exRender = true
 ITEM.bDropOnDeath = true
 ITEM.width = 1
 ITEM.height = 1
+ITEM.weight = 13.60
 
 ITEM.iconCam = {
     pos = Vector(1.96, 5.95, 199.77),

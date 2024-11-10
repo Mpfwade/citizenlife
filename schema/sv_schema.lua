@@ -82,6 +82,7 @@ local combineNPCs = {
     ["npc_strider"] = true,
     ["npc_hunter"] = true,
     ["npc_stalker"] = true,
+    ["npc_turret_ceiling"] = true,
 }
 
 function Schema:UpdateRelationShip(ent)

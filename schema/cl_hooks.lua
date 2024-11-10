@@ -96,9 +96,9 @@ netstream.Hook("Frequency", function(oldFrequency)
 end)
 
 local function RestrictSpawnMenu()
-    if not LocalPlayer():IsAdmin() then return false end
+    if not LocalPlayer():IsPlayer() then return false end
 end
 
 hook.Add("SpawnMenuOpen", "RestrictSpawnMenu", function()
-    if not LocalPlayer():IsAdmin() then return RestrictSpawnMenu() end
+    if not LocalPlayer():IsPlayer() then return RestrictSpawnMenu() end
 end)

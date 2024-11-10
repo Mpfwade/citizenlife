@@ -123,3 +123,27 @@ net.Receive("ixViewDataAction", function(length, client)
         data.target:SetData("record", newRecord)
     end
 end)
+
+util.AddNetworkString("SetBOLCommand")
+util.AddNetworkString("RevokeBOLCommand")
+
+net.Receive("SetBOLCommand", function(len, ply)
+    local ent = net.ReadEntity()
+    local reason = net.ReadString()
+    if IsValid(ent) then
+        local existingReason = ent:GetNWString("ixBOLReason", "")
+        if existingReason ~= "" then
+            existingReason = existingReason .. ", " -- Add a newline for separation
+        end
+        ent:SetNWBool("ixActiveBOL", true)
+        ent:SetNWString("ixBOLReason", existingReason .. reason) -- Append new reason
+    end
+end)
+
+net.Receive("RevokeBOLCommand", function(len, ply)
+    local ent = net.ReadEntity()
+    if IsValid(ent) then
+        ent:SetNWBool("ixActiveBOL", false)
+        ent:SetNWString("ixBOLReason", "")
+    end
+end)

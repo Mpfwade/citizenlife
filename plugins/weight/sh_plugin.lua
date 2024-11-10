@@ -105,10 +105,12 @@ if (CLIENT) then
 					end
 				end
 
+
 				local character = LocalPlayer():GetCharacter()
 				local carry = character:GetData("carry", 0)
-				local color = ix.config.Get("color")
 				local maxWeight = ix.config.Get("maxWeight", 30)
+				local carryPercentage = (carry / maxWeight) * 100
+				local color = ix.config.Get("color")
 
 				local w, h = panel:GetSize()
 
@@ -145,13 +147,10 @@ if (CLIENT) then
 						barT:SetContentAlignment(5)
 						barT.Think = function()
 							carry = character:GetData("carry", 0)
-							if (ix.option.Get("imperial", false)) then
-								barT:SetText(math.Round(carry * 2.20462, 2).." lbs / "..math.Round(maxWeight * 2.20462, 2).." lbs")
-							else
-								barT:SetText(math.Round(carry, 2).." kg / "..maxWeight.." kg")
-							end
+							carryPercentage = (carry / maxWeight) * 100
+							barT:SetText(string.format("%.2f%% used", carryPercentage))
 						end
-
+				
 				canvas.PerformLayout = canvasLayout
 				canvas:Layout()
 			end

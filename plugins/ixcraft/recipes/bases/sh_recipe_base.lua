@@ -12,19 +12,6 @@ RECIPE.craftStartSound = "physics/metal/weapon_impact_hard2.wav"
 RECIPE.craftEndSound = "physics/metal/weapon_impact_hard3.wav"
 RECIPE.craftTime = nil
 
-RECIPE:PostHook("OnCanCraft", function(self, ply)
-    for _, v in pairs(ents.FindByClass( self.station )) do
-        if ply:GetPos():DistToSqr(v:GetPos()) < 100 * 100 then
-            if ply.isCrafting == true then return false, "You cannot make multiple items while you are making something else!" end
-            ply.benchInUse = v
-
-            return true
-        end
-    end
-
-    return false, "You need to be near a station."
-end)
-
 if SERVER then
     RECIPE:PostHook("OnCraft", function(self, ply)
         local ent = ply.benchInUse

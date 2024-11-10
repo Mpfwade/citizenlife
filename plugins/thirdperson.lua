@@ -55,6 +55,7 @@ if (CLIENT) then
 
     function PLUGIN:CalcView(ply, origin, angles, fov)
         if (ply.ixIntroBool) then return false end
+        if (ply:GetNWBool("Ragdolled")) then return false end
         local FrameTime = RealFrameTime()
 
         local view = {

@@ -1,4 +1,3 @@
-
 local PANEL = {}
 
 function PANEL:Setup(entity)

@@ -9,7 +9,7 @@ ENT.Category 		= "IX:HL2RP"
 ENT.AutomaticFrameAdvance = true
 ENT.Spawnable = true
 ENT.AdminOnly = true
-ENT.bNoPersist = true
+ENT.bNoPersist = false
 
 ix.combineterminal = {}
 ix.combineterminal.charges = {
@@ -28,5 +28,6 @@ ix.combineterminal.charges = {
 	{name = "507, public non-compliance", severity = 2, sound = "npc/overwatch/radiovoice/publicnoncompliance507.wav"},
 	{name = "603, unlawful entry", severity = 4, sound = "npc/overwatch/radiovoice/unlawfulentry603.wav"},
 	{name = "Disassociation from the civic populous", severity = 20, sound = "npc/overwatch/radiovoice/disassociationfromcivic.wav"},
-	{name = "Promoting communal unrest", severity = 20, sound = "npc/overwatch/radiovoice/promotingcommunalunrest.wav"}
+	{name = "Promoting communal unrest", severity = 20, sound = "npc/overwatch/radiovoice/promotingcommunalunrest.wav"},
+	{name = "Anti-citizen scavenging", severity = 3, sound = ""}
 }

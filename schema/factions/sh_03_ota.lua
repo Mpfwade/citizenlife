@@ -1,38 +1,40 @@
---[[ Base Config ]]--
 
 FACTION.name = "Overwatch Transhuman Arm"
-FACTION.description = [[Name: Overwatch Transhuman Arm
-Description: The Overwatch Transhuman Arm are the military wing of the Universal Union's forces. They are highly trained and extensively modified super soldiers, far stronger than any normal human. They are entirely without fear or emotion of any kind, called on to the streets only when circumstances are at their most dire. Otherwise, they remain in the Nexus or guarding hardpoints around the city. They are completely obedient to their commander, following orders without regard to their own safety. Operating in small squads, the Overwatch Transhuman Arm are a force to be reckoned with, and haunt the dreams of any citizen with common sense.]]
-FACTION.color = Color(150, 50, 50)
-
---[[ Helix Base Config ]]--
-
-FACTION.models = {
-	"models/jq/hlvr/characters/combine/grunt/combine_grunt_hlvr_npc.mdl",
-}
-
-FACTION.isGloballyRecognized = true
+FACTION.description = "A transhuman Overwatch soldier produced by the Combine."
+FACTION.color = Color(150, 50, 50, 255)
+FACTION.pay = 40
+FACTION.models = {"models/combine_soldier.mdl"}
 FACTION.isDefault = false
+FACTION.isGloballyRecognized = true
+FACTION.runSounds = {[0] = "NPC_CombineS.RunFootstepLeft", [1] = "NPC_CombineS.RunFootstepRight"}
 
-FACTION.payTime = 600
-FACTION.pay = 0
+function FACTION:OnCharacterCreated(client, character)
+	local inventory = character:GetInventory()
 
---[[ Custom Config ]]--
+	inventory:Add("pistol", 1)
+	inventory:Add("pistolammo", 2)
 
-FACTION.defaultClass = nil
-FACTION.adminOnly = false
-FACTION.donatorOnly = false
-FACTION.noModelSelection = true
-FACTION.command = "ix_faction_become_ota"
-FACTION.modelWhitelist = "models/jq/hlvr/characters/combine/grunt/combine_grunt_hlvr_npc.mdl"
+	inventory:Add("ar2", 1)
+	inventory:Add("ar2ammo", 2)
+end
 
---[[ Plugin Configs ]]--
+function FACTION:GetDefaultName(client)
+	return "OTA-ECHO.OWS-" .. Schema:ZeroNumber(math.random(1, 99999), 5), true
+end
 
-FACTION.canSeeWaypoints = true
-FACTION.canAddWaypoints = true
-FACTION.canRemoveWaypoints = true
-FACTION.canUpdateWaypoints = true
+function FACTION:OnTransferred(character)
+	character:SetName(self:GetDefaultName())
+	character:SetModel(self.models[1])
+end
 
---[[ Do not change! ]]--
+function FACTION:OnNameChanged(client, oldValue, value)
+	local character = client:GetCharacter()
+
+	if (!Schema:IsCombineRank(oldValue, "OWS") and Schema:IsCombineRank(value, "OWS")) then
+		character:JoinClass(CLASS_OWS)
+	elseif (!Schema:IsCombineRank(oldValue, "EOW") and Schema:IsCombineRank(value, "EOW")) then
+		character:JoinClass(CLASS_EOW)
+	end
+end
 
 FACTION_OTA = FACTION.index

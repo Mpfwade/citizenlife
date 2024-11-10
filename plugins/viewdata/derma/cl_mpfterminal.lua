@@ -1,3 +1,5 @@
+local combineLogoMat = Material("citizenlifestuff/combine/apclogocitizenlife.png")
+
 local PANEL = {}
 
 local function CursorStop(pan)
@@ -116,26 +118,29 @@ function PANEL:Init()
     function dock.text:SetInfo(ent)
         self:SetText("")
         self:InsertColorChange(255, 255, 255, 255)
-        -- This is used later incase we need to refresh stored stuff
+        -- This is used later in case we need to refresh stored stuff
         local name = ent:GetName()
         self:AppendText("Subject Name:\n" .. name .. "\n\n")
         local character = ent:GetCharacter()
         local desc = character:GetDescription()
         self:AppendText("Physical Description:\n" .. desc .. "\n\n")
         local bol = ent:GetNWBool("ixActiveBOL")
-
+    
         if bol then
             self:InsertColorChange(255, 0, 0, 255)
             bol = "MISCOUNT"
+            local reason = ent:GetNWString("ixBOLReason", text)
+    
+            self:AppendText("Response Status: " .. bol .. "\n\n")
+            self:InsertColorChange(255, 255, 255, 255)
+            self:AppendText("Reason for MISCOUNT: " .. reason .. "\n\n\n")
         else
             self:InsertColorChange(255, 255, 255, 255)
             bol = "MONITOR"
+            self:AppendText("Response Status: " .. bol .. "\n\n")
         end
-
-        self:AppendText("Response Status: " .. bol .. "\n\n\n")
-        self:InsertColorChange(255, 255, 255, 255)
     end
-
+    
     dock.record = vgui.Create("DButton", dock)
     dock.record:SetSize(w / 8, h / 18)
     dock.record:SetPos(w / 32, h / 2.5)
@@ -228,10 +233,25 @@ function PANEL:Init()
         local par = self:GetParent():GetParent()
         local ent = par.selectedEnt
         if not IsValid(ent) then return end
-        ent:SetNWBool("ixActiveBOL", true)
-        surface.PlaySound("ui/buttonclick.wav")
-    end
-
+    
+        local currentReason = ent:GetNWString("ixBOLReason", "") -- Get current BOL reason, default to empty string if none
+    
+        Derma_StringRequest(
+            "Set BOL",
+            "Please enter the reason for setting a BOL on " .. ent:GetName(),
+            currentReason, -- Use current reason as default text
+            function(text)
+                net.Start("SetBOLCommand")
+                net.WriteEntity(ent)
+                net.WriteString(text)
+                net.SendToServer()
+                surface.PlaySound("ui/buttonclick.wav")
+                self:SetEnabled(false) -- Disable the button after setting BOL
+            end,
+            function(text) end
+        )
+    end    
+    
     dock.setBOL = vgui.Create("DButton", dock)
     dock.setBOL:SetSize(w / 8, h / 18)
     dock.setBOL:SetPos(w / 3, h / 2.5)
@@ -275,14 +295,97 @@ function PANEL:Init()
         local par = self:GetParent():GetParent()
         local ent = par.selectedEnt
         if not IsValid(ent) then return end
-        ent:SetNWBool("ixActiveBOL", false)
+    
+        net.Start("RevokeBOLCommand")  -- Custom net message
+        net.WriteEntity(ent)
+        net.SendToServer()
+        surface.PlaySound("ui/buttonclick.wav")
+        par.dockPanel.notes:SetEnabled(true) -- Re-enable the Set BOL button
+    end
+
+    dock.handbook = vgui.Create("DButton", dock)
+    dock.handbook:SetSize(w / 14, h / 18)
+    dock.handbook:SetPos(w / 2.4, h / 25)
+    dock.handbook:SetText("Handbook")
+
+    function dock.handbook:Paint(w, h)
+        local par = self:GetParent():GetParent()
+        self.alpha = self.alpha or 0
+        self.mult = self.mult or 0
+        self.textCol = self.textCol or 150
+        self.textCol = Lerp(0.02, self.textCol, 255)
+
+        if self:IsHovered() then
+            self.alpha = Lerp(0.02, self.alpha, 255)
+            self.mult = Lerp(0.02, self.mult, 1)
+        else
+            self.alpha = Lerp(0.02, self.alpha, 0)
+            self.mult = Lerp(0.02, self.mult, 0)
+        end
+
+        surface.SetDrawColor(90, 90, 90, 245)
+        surface.DrawRect(0, 0, w, h)
+
+        surface.SetDrawColor(col.r, col.g, col.b, self.alpha)
+        surface.DrawRect(0, h - (h / 12), w * self.mult, h / 10)
+        
+
+        local textCol = Color(self.textCol, self.textCol, self.textCol, self.textCol)
+        draw.SimpleText(self:GetText(), "RadioFont", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+
+        return true
+    end
+
+    function dock.handbook:DoClick()
+        gui.OpenURL("https://docs.google.com/document/d/1c2dp26sr7NK3HeqmL0j1tQWscJPx-IXpMgsx4FHiFvU/edit?usp=sharing")
         surface.PlaySound("ui/buttonclick.wav")
     end
 
+    dock.team = vgui.Create("DButton", dock)
+    dock.team:SetSize(w / 14, h / 18)
+    dock.team:SetPos(w / 2.4, h / 10)
+    dock.team:SetText("Teams")
+
+    function dock.team:Paint(w, h)
+        local par = self:GetParent():GetParent()
+        self.alpha = self.alpha or 0
+        self.mult = self.mult or 0
+        self.textCol = self.textCol or 150
+        self.textCol = Lerp(0.02, self.textCol, 255)
+
+
+        if self:IsHovered() then
+            self.alpha = Lerp(0.02, self.alpha, 255)
+            self.mult = Lerp(0.02, self.mult, 1)
+        else
+            self.alpha = Lerp(0.02, self.alpha, 0)
+            self.mult = Lerp(0.02, self.mult, 0)
+        end
+
+        surface.SetDrawColor(90, 90, 90, 245)
+        surface.DrawRect(0, 0, w, h)
+
+        surface.SetDrawColor(col.r, col.g, col.b, self.alpha)
+        surface.DrawRect(0, h - (h / 12), w * self.mult, h / 10)
+        
+
+        local textCol = Color(self.textCol, self.textCol, self.textCol, self.textCol)
+        draw.SimpleText(self:GetText(), "RadioFont", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+
+        return true
+    end
+
+    function dock.team:DoClick()
+        RunConsoleCommand("say", "/squadmenu")
+        surface.PlaySound("ui/buttonclick.wav")
+    end
+    
+    --- Buttons end here
+
     self.close = vgui.Create("DButton", self)
-    self.close:SetFont("ixSmallFont")
+    self.close:SetFont("RadioFont")
     self.close:SetSize(16, 16)
-    self.close:SetPos((w - h / 64) - 5, 5)
+    self.close:SetPos((w - h / 64) - 8, 5)
     self.close:SetText("X")
 
     -- Using a dot instead of colon so self isn't overriden
@@ -294,6 +397,7 @@ function PANEL:Init()
     self:PopulateCitizens()
     CursorStop(self)
 end
+
 
 function PANEL:PopulateCitizens()
     self.list.ents = {}
@@ -355,12 +459,46 @@ end
 local cursMat = Material("vgui/cursors/arrow")
 
 function PANEL:Paint(w, h)
+    -- Background
     surface.SetDrawColor(40, 40, 40, 245)
     surface.DrawRect(0, 0, w, h)
+
+    -- Gray border
+    local borderThickness = 5 -- Adjust the thickness of the border here
+    local borderColor = Color(128, 128, 128, 255) -- Gray color for the border
+
+    surface.SetDrawColor(borderColor)
+    surface.DrawOutlinedRect(0, 0, w, h, borderThickness)
 end
 
 function PANEL:PaintOver(w, h)
     self:PaintCursor(cursMat)
+end
+
+--- Combine APC logo
+
+function PANEL:Paint(w, h)
+    -- Draw the initial background
+    surface.SetDrawColor(40, 40, 40, 245)
+    surface.DrawRect(0, 0, w, h)
+
+    -- Render all UI components here
+    -- For example, buttons, lists, model panels, etc.
+    -- ...
+
+    -- Draw the Combine logo above these components
+    -- Change color to lighter gray with less transparency
+    surface.SetDrawColor(192, 192, 192, 200) -- Lighter gray color with reduced transparency
+    surface.SetMaterial(combineLogoMat)
+
+    -- Position and size variables for the Combine logo
+    local logoX = -150 -- X position
+    local logoY = -70 -- Y position
+    local logoWidth = 1000 -- Width of the logo
+    local logoHeight = 1000 -- Height of the logo
+
+    surface.DrawTexturedRect(logoX, logoY, logoWidth, logoHeight) -- Draw the logo with specified position and size
+    
 end
 
 vgui.Register("ixMPFTerminal", PANEL, "Panel")

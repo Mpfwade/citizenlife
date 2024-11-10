@@ -21,11 +21,13 @@ function PLAYER:IsCombine()
 end
 
 function PLAYER:IsCombineCommand()
-    return self:IsCombine() and ((self.ixOTARank == 3) or (self.ixCCARank == 4) or (self.ixOTADivision == 6))
+    local char = self:GetCharacter()
+    return self:IsCombine() and ((self.ixOTARank == 3) or (char:GetClass() == CLASS_CCA_RL) or (self.ixOTADivision == 6))
 end
 
 function PLAYER:IsCombineLeader()
-    return self:IsCombine() and (self.ixCCARank == 4 or self.ixOTARank == 3)
+    local char = self:GetCharacter()
+    return self:IsCombine() and (char:GetClass() == CLASS_CCA_RL or self.ixOTARank == 3)
 end
 
 function PLAYER:IsCA()
@@ -175,7 +177,6 @@ else
     end
 end
 
-
 function PLAYER:ShouldSetRagdolled(bState)
     if not self:Alive() then return end
 
@@ -188,7 +189,6 @@ function PLAYER:ShouldSetRagdolled(bState)
 
         entity:CallOnRemove("fixer", function()
             if IsValid(self) then
-                self:SetLocalVar("blur", nil)
                 self:SetLocalVar("ragdoll", nil)
 
                 if not entity.ixNoReset then
@@ -246,7 +246,6 @@ function PLAYER:ShouldSetRagdolled(bState)
             end
         end)
 
-        self:SetLocalVar("blur", 25)
         self.ixRagdoll = entity
         entity.ixWeapons = {}
         entity.ixPlayer = self

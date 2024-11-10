@@ -3,6 +3,7 @@ ITEM.description = "Its a breakable glass bottle containing a flammable substanc
 ITEM.model = "models/props_junk/GlassBottle01a.mdl"
 ITEM.width = 1
 ITEM.height = 1
+ITEM.weight = 4.53
 ITEM.isGrenade = true
 ITEM.bDropOnDeath = true
 ITEM.functions.use = {

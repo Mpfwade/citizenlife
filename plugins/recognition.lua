@@ -1,58 +1,61 @@
-
 PLUGIN.name = "Recognition"
 PLUGIN.author = "Chessnut"
 PLUGIN.description = "Adds the ability to recognize people."
 
 do
-	local character = ix.meta.character
+    local character = ix.meta.character
 
-	if (SERVER) then
-		function character:Recognize(id)
-			if (!isnumber(id) and id.GetID) then
-				id = id:GetID()
-			end
+    if (SERVER) then
+        function character:Recognize(id)
+            if not isnumber(id) and id.GetID then
+                id = id:GetID()
+            end
 
-			local recognized = self:GetData("rgn", "")
+            local recognized = self:GetData("rgn", "")
 
-			if (recognized != "" and recognized:find(","..id..",")) then
-				return false
-			end
+            if recognized ~= "" and recognized:find("," .. id .. ",") then
+                return false
+            end
 
-			self:SetData("rgn", recognized..","..id..",")
+            self:SetData("rgn", recognized .. "," .. id .. ",")
 
-			return true
-		end
-	end
+            return true
+        end
 
-	function character:DoesRecognize(id)
-		if (!isnumber(id) and id.GetID) then
-			id = id:GetID()
-		end
+        function character:ForgetRecognized()
+            self:SetData("rgn", "")
+        end
+    end
 
-		return hook.Run("IsCharacterRecognized", self, id)
-	end
+    function character:DoesRecognize(id)
+        if not isnumber(id) and id.GetID then
+            id = id:GetID()
+        end
 
-	function PLUGIN:IsCharacterRecognized(char, id)
-		if (char.id == id) then
-			return true
-		end
+        return hook.Run("IsCharacterRecognized", self, id)
+    end
 
-		local other = ix.char.loaded[id]
+    function PLUGIN:IsCharacterRecognized(char, id)
+        if char.id == id then
+            return true
+        end
 
-		if (other) then
-			local faction = ix.faction.indices[other:GetFaction()]
+        local other = ix.char.loaded[id]
 
-			if (faction and faction.isGloballyRecognized) then
-				return true
-			end
-		end
+        if other then
+            local faction = ix.faction.indices[other:GetFaction()]
 
-		local recognized = char:GetData("rgn", "")
+            if faction and faction.isGloballyRecognized then
+                return true
+            end
+        end
 
-		if (recognized != "" and recognized:find(","..id..",")) then
-			return true
-		end
-	end
+        local recognized = char:GetData("rgn", "")
+
+        if recognized ~= "" and recognized:find("," .. id .. ",") then
+            return true
+        end
+    end
 end
 
 if (CLIENT) then

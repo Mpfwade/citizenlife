@@ -51,7 +51,8 @@ ITEM.functions.Edit = {
 }
 
 ITEM.functions.take.OnCanRun = function(item)
-	local owner = item:GetData("owner", 0)
+    local player = item.player
+    local playerClass = player:GetCharacter():GetClass()
 
-	return IsValid(item.entity) and (owner == 0 or owner == item.player:GetCharacter():GetID())
+    return IsValid(item.entity)
 end

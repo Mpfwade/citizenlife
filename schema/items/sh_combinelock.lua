@@ -9,6 +9,8 @@ ITEM.iconCam = {
 	fov = 25.29
 }
 
+ITEM.weight = 4.53
+
 ITEM.functions.Place = {
 	OnRun = function(itemTable)
 		local client = itemTable.player

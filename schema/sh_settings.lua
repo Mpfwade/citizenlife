@@ -37,13 +37,9 @@ ix.act.Register("Knock", "metrocop", {
     untimed = true
 })
 
-ix.flag.Add("V", "Access to voice chat.")
-
 --[[---------------------------------------------------------------------------
 	Helix Base Settings
 ---------------------------------------------------------------------------]]--
-
-ix.option.Add("hudScreenEffect", ix.type.bool, true)
 
 ix.option.Add("showLocalAssets", ix.type.bool, true, {
 	description = "Should the local assets on your Combine Hud show?",

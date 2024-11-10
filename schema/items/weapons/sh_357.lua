@@ -9,11 +9,13 @@ ITEM.bDropOnDeath = true
 
 ITEM.model = "models/weapons/w_357.mdl"
 ITEM.skin = 0
+ITEM.weight = 9.07
 
 -- Item Inventory Size Configuration
 
 ITEM.width = 1
 ITEM.height = 1
+ITEM.weight = 2
 
 -- Item Custom Configuration
 

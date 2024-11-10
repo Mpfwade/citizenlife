@@ -12,6 +12,8 @@ ITEM.skin = 0
 -- Item Inventory Size Configuration
 ITEM.width = 1
 ITEM.height = 1
+ITEM.weight = 0.4
+
 -- Item Custom Configuration
 
 ITEM.class = "ls_brokenbottle"

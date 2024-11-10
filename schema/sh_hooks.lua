@@ -246,16 +246,6 @@ function Schema:CanTool(ply, trace, toolname, tool, button)
     end
 end
 
-function Schema:CanProperty(ply, property, ent)
-    if property == "persist" then
-        if SERVER then
-            ply:Notify("Persist Feature is disabled, please use perma all tool instead!")
-        end
-
-        return false
-    end
-end
-
 function Schema:PrePACEditorOpen(ply)
     if not (ply:IsSuperAdmin() or ply:IsDonator()) then
         ply:ChatNotify("PAC3 is restricted to certain users only!")

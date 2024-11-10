@@ -4,6 +4,7 @@ ITEM.model = "models/gibs/manhack_gib02.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.bDropOnDeath = true
+ITEM.weight = 2.26
 
 ITEM.functions.Deploy = {
     name = "Deploy",

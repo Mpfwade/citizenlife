@@ -7,9 +7,21 @@ end
 local PLAYER = FindMetaTable("Player")
 
 function PLAYER:SetRP(value)
-    if tonumber(value) < 0 then return end
-    self:SetPData("ixRP", tonumber(value))
-    self:SetNWInt("ixRP", tonumber(value))
+    -- Ensure that 'value' is a number and not nil
+    local numValue = tonumber(value)
+    if not numValue then
+        print("SetRP: Invalid value provided. Value must be a number.")
+        return
+    end
+
+    -- Check if the number is less than 0
+    if numValue < 0 then 
+        print("SetRP: Negative values are not allowed.")
+        return 
+    end
+
+    self:SetPData("ixRP", numValue)
+    self:SetNWInt("ixRP", numValue)
 end
 
 concommand.Add("ix_rp_set", function(ply, cmd, args)

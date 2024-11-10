@@ -1,7 +1,10 @@
 --[[---------------------------------------------------------------------------
 	Initializing Extra Command Classes
 ---------------------------------------------------------------------------]]
---
+--|
+
+if SERVER then
+
 ix.command.Add("Tie", {
     description = "Tie someone in front of you.",
     OnCheckAccess = function(_, ply)
@@ -15,8 +18,20 @@ ix.command.Add("Tie", {
         local trace = util.TraceLine(data)
         local target = trace.Entity
 		local tieAnim = "Buttonfront"
+		local walkSpeed = ix.config.Get("walkSpeed")
+        local runSpeed = ix.config.Get("runSpeed")
 
-        if IsValid(target) and ((target:IsPlayer() and target:GetCharacter()) or (IsValid(target.ixPlayer) and target.ixPlayer:GetCharacter())) then
+		local function FacingWall(entity)
+            local traceData = {}
+            traceData.start = entity:EyePos()
+            traceData.endpos = traceData.start + entity:GetForward() * 20
+            traceData.filter = entity
+
+            return util.TraceLine(traceData).Hit
+        end
+
+
+		if IsValid(target) and ((target:IsPlayer() and target:GetCharacter()) or (IsValid(target.ixPlayer) and target.ixPlayer:GetCharacter())) then
             local targetEntity = target
 
             if IsValid(target.ixPlayer) then
@@ -24,21 +39,34 @@ ix.command.Add("Tie", {
             end
 
             if not targetEntity:GetNetVar("tying") and not targetEntity:IsRestricted() then
-                ply:SetAction("You are tying " .. targetEntity:Nick(), 3)
-				ply:ForceSequence(tieAnim, nil, 0.75, true)
+				if FacingWall(targetEntity) then
+					local originalPos = targetEntity:GetPos() -- Store original position
+		
+					ply:ForceSequence("harrassapcslam", nil, 4, false)
+					targetEntity:ForceSequence("apcarrestslam", nil, nil, false)
+					targetEntity:SetPos(targetEntity:GetPos() - targetEntity:GetForward() * 28) -- Move target back
+					targetEntity:Freeze(true)
+		
+					-- Make the target no-collide
+					local originalCollisionGroup = targetEntity:GetCollisionGroup()
+					targetEntity:SetCollisionGroup(COLLISION_GROUP_WORLD)
+					
+					timer.Simple(9.94, function()
+						if IsValid(targetEntity) then
+							targetEntity:SetCollisionGroup(originalCollisionGroup)
+							targetEntity:SetPos(originalPos) -- Move the target back to the original position
+							targetEntity:Freeze(false)
+						end
+					end)
+				else
+					ply:ForceSequence(tieAnim, nil, 0.75, true)
+				end
 
                 if IsValid(target.ixPlayer) then
 					ply:EmitSound("misc/cablecuff.wav")
 
                     targetEntity:SetRestricted(true)
                     targetEntity:SetNetVar("tying")
-                    targetEntity:NotifyLocalized("fTiedUp")
-
-                    if targetEntity:IsCombine() then
-                        local location = targetEntity:GetArea() or "unknown location"
-                        Schema:AddCombineDisplayMessage("Downloading lost radio contact information...")
-                        Schema:AddCombineDisplayMessage("WARNING! Radio contact lost for unit at " .. location .. "...", Color(255, 0, 0, 255), true)
-                    end
 
                     ply:SetAction()
                     targetEntity:SetAction()
@@ -49,14 +77,21 @@ ix.command.Add("Tie", {
 
                         targetEntity:SetRestricted(true)
                         targetEntity:SetNetVar("tying")
-                        targetEntity:NotifyLocalized("fTiedUp")
+						targetEntity:SelectWeapon("ix_hands")
+						
+						if targetEntity:Crouching() then
+							ply:ForceSequence("barrelpush", nil, 0.75, false)
+							targetEntity:ForceSequence("arrestidle", nil, nil, false)
+							if targetEntity:IsFemale() then
+								targetEntity:ForceSequence("crouch_panicked", nil, nil, false)
+							end
+						end
 
                         if targetEntity:IsCombine() then
                             local location = targetEntity:GetArea() or "unknown location"
-                            Schema:AddCombineDisplayMessage("Downloading lost radio contact information...")
                             Schema:AddCombineDisplayMessage("WARNING! Radio contact lost for unit at " .. location .. "...", Color(255, 0, 0, 255), true)
                         end
-                    end, 3, function()
+                    end, 1, function()
                         ply:SetAction()
                         targetEntity:SetAction()
                         targetEntity:SetNetVar("tying")
@@ -72,8 +107,105 @@ ix.command.Add("Tie", {
         end
     end
 })
+end	
 
-	
+if CLIENT then
+    local tyingMusic = nil
+
+    net.Receive("PlayTyingMusic", function()
+        if tyingMusic then tyingMusic:Stop() end
+        tyingMusic = CreateSound(LocalPlayer(), "music/loop/restraintv2.mp3")
+        tyingMusic:Play()
+        tyingMusic:ChangeVolume(1, 0) 
+        tyingMusic:ChangePitch(100, 0)
+    end)
+end
+
+ix.command.Add("GetAssignment", {
+    description = "Request the current assignment.",
+    OnRun = function(self, client)
+    
+        local plugin = ix.plugin.Get("curfew")
+        if not plugin then
+            client:ChatPrint("The curfew plugin is not available.")
+            return
+        end
+
+		       client:EmitSound("npc/combine_soldier/vo/overwatchrequestreinforcement.wav")
+        timer.Simple(0.93, function()
+            if IsValid(client) then
+                client:StopSound("npc/combine_soldier/vo/overwatchrequestreinforcement.wav")
+            end
+        end)
+
+        timer.Simple(0.95, function()
+            if IsValid(client) then
+                client:EmitSound("npc/metropolice/vo/location.wav")
+            end
+        end)
+        
+        
+        local currentEvent = plugin:GetEvent()
+        if currentEvent then
+            client:ChatPrint("Dispatch speaks through your radio. <::ATTENTION UNIT, CURRENT ASSIGNMENT IS " .. currentEvent)
+        else
+            client:ChatPrint("There is no active event at the moment.")
+        end
+    end
+})
+
+ix.command.Add("GetCode", {
+    description = "Requests current city code from dispatch.",
+    adminOnly = false,
+    OnRun = function(self, client)
+        if client:GetCharacter() and client:GetCharacter():GetFaction() == FACTION_CCA then
+            local cityCodeIndex = ix.config.Get("cityCode", 0)
+            local cityCodeInfo = ix.cityCodes[cityCodeIndex]
+
+            if cityCodeInfo then
+                local description = cityCodeInfo[1]
+
+                client:ChatPrint("Dispatch speaks through your radio. <::ALL UNITS, VERDICT CODE IS..." .. description .. "::>")
+
+                client:ConCommand('say "Overwatch request, stabilization-jurisdiction."')
+
+				-- stupid cutoff bullshit, hopefully replace with cutstom wav eventually
+                client:EmitSound("npc/combine_soldier/vo/overwatchrequestreinforcement.wav")
+                timer.Simple(0.93, function()
+                    if IsValid(client) then
+                        client:StopSound("npc/combine_soldier/vo/overwatchrequestreinforcement.wav")
+                    end
+                end)
+
+                timer.Simple(0.95, function()
+                    if IsValid(client) then
+                        client:EmitSound("npc/metropolice/vo/stabilizationjurisdiction.wav")
+                    end
+                end)
+
+                timer.Simple(3.3, function()
+                    if IsValid(client) then
+                        client:EmitSound("npc/overwatch/radiovoice/allunitsverdictcodeis.wav")
+                    end
+                end)
+
+                timer.Simple(5.3, function()
+                    if IsValid(client) then
+                        local cityCodeSoundPath = cityCodeInfo[4]
+                        if cityCodeSoundPath then
+                            client:EmitSound(cityCodeSoundPath)
+                        end
+                    end
+                end)
+
+            else
+                client:ChatPrint("The current city code is unknown or not properly configured.")
+            end
+        else
+            client:ChatPrint("You do not have the authorization to request the city code.")
+        end
+    end
+})
 	
 ix.command.Add("DoorBuy", {
 	description = "@cmdDoorBuy",
@@ -139,45 +271,93 @@ ix.command.Add("DoorBuy", {
 	end
 })
 
-ix.command.Add("Kickdoor", {
-	description = "Attempt to kick a door open.",
-	OnRun = function(self, client, ply)
-		if client:Team() == FACTION_OTA or client:Team() == FACTION_CCA then
-			local see = client:GetEyeTraceNoCursor()
-			if see.Entity:GetClass() =="prop_door_rotating" then
-				if client:Team() == FACTION_CCA then -- beginning of MPF injection
-					local inject = Sound("npc/metropolice/vo/inject.wav")
-					local function doorOpen()
-						client:ForceSequence("kickdoorbaton")
-						timer.Simple(1.1, function()
-							see.Entity:Fire("Unlock")
-							see.Entity:EmitSound("physics/wood/wood_plank_break1.wav", 100, 90)
-							see.Entity:Fire("Open")
-							client:Notify("You successfully kicked the door open!")
-						end)
-					end
-					client:EmitSound(inject)
-					timer.Simple(SoundDuration(inject), doorOpen) -- end of MPF injection
-				elseif client:Team() == FACTION_OTA then -- beginning of OTA injection
-						client:ForceSequence("range_fistse_noga_1")
-						timer.Simple(0.4, function()
-							see.Entity:Fire("Unlock")
-							see.Entity:EmitSound("physics/wood/wood_plank_break1.wav", 100, 90)
-							see.Entity:Fire("Open")
-							client:Notify("You successfully kicked the door open!")
-						end) -- end of OTA injection
-				else
-					see.Entity:Fire("Unlock")
-					see.Entity:Fire("Open")
-					client:Notify("You successfully kicked the door open!")
-					see.Entity:EmitSound("physics/wood/wood_plank_break1.wav", 100, 90)
-				end
-			else
-				client:Notify("This is not a valid door!")
-			end
-				end
-			end
+ix.command.Add("DoorSetCMBOnly", {
+    description = "Sets the door you are looking at to be only openable by the Combine or resets it.",
+    adminOnly = true,
+    arguments = ix.type.number,
+    OnRun = function(self, client, state)
+        local entity = client:GetEyeTrace().Entity
+
+        if not IsValid(entity) or not entity:IsDoor() then
+            client:Notify("You need to look at a door!")
+            return
+        end
+
+        if state == 1 then
+            entity.restrictedToFactions = true
+            client:Notify("This door is now only accessible by the Combine.")
+        elseif state == 0 then
+            entity.restrictedToFactions = nil
+            client:Notify("This door has returned to normal access.")
+        else
+            client:Notify("Invalid state. Use 0 for normal access or 1 for Combine-only access.")
+        end
+    end
 })
+
+hook.Add("PlayerUse", "CheckCCADoorRestriction", function(client, entity)
+    if IsValid(entity) and entity:IsDoor() and entity.restrictedToFactions then
+
+        if client:Team() == FACTION_OTA or client:Team() == FACTION_CCA then
+            return true
+        else
+            return false
+        end
+    end
+end)
+
+ix.command.Add("Kickdoor", {
+    description = "Attempt to kick a door open.",
+    OnRun = function(self, client)
+        if client:Team() == FACTION_OTA or client:Team() == FACTION_CCA then
+            local trace = client:GetEyeTraceNoCursor()
+            local door = trace.Entity
+
+            if IsValid(door) and door:GetClass() == "prop_door_rotating" then
+                local function openDoor()
+                
+                    local doorPos = door:GetPos()
+                    local plyPos = client:GetPos()
+                    local direction = doorPos - plyPos
+                    direction:Normalize()
+
+					door:Fire("setspeed", 350)
+                    door:Fire("unlock")
+                    door:EmitSound("physics/wood/wood_plank_break1.wav", 100, 90)
+                    door:Fire("openawayfrom", tostring(client))
+                    client:Notify("You successfully kicked the door open!")
+
+					timer.Simple(0.5, function()
+						if (IsValid(door)) then
+							door:Fire("setspeed", 120)
+						end
+					end)
+                    
+                    local shakeAmplitude = 5
+                    local shakeFrequency = 35
+                    local shakeDuration = 0.5
+                    local shakeRadius = 500 
+                    util.ScreenShake(door:GetPos(), shakeAmplitude, shakeFrequency, shakeDuration, shakeRadius)
+                end
+
+                if client:Team() == FACTION_CCA then
+                    local inject = Sound("npc/metropolice/vo/inject.wav")
+                    client:EmitSound(inject)
+                    client:ForceSequence("kickdoorbaton")
+                    timer.Simple(SoundDuration(inject), openDoor)
+                elseif client:Team() == FACTION_OTA then
+                    client:ForceSequence("range_fistse_noga_1")
+                    timer.Simple(0.4, openDoor)
+                else
+                    openDoor()
+                end
+            else
+                client:Notify("This is not a valid door!")
+            end
+        end
+    end
+})
+
 
 
 ix.command.Add("ForceRespawn", {

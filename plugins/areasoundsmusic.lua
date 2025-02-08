@@ -70,13 +70,27 @@ local MUSIC_INFO = {
         volume = 100
     },
     ["Intake-Hub"] = {
-        name = "music/hl2_song26_trainstation1.mp3",
+        name = "music/stingers/hl1_stinger_song16.mp3",
         volume = 100
     },
     ["404 Zone"] = {
         name = "ambient/atmosphere/sewer_air1.wav",
         volume = 100
     },
+}
+
+local RANDOM_MUSIC = {
+    { name = "music/hl1_song19.mp3", volume = 100 },
+    { name = "music/hl2_song10.mp3", volume = 100 },
+    { name = "music/hl2_song2.mp3", volume = 100 },
+    { name = "music/hl1_song3.mp3", volume = 100 },
+    { name = "music/hl1_song21.mp3", volume = 100 },
+    { name = "music/hl1_song20.mp3", volume = 100 },
+    { name = "music/hl2_song26_trainstation1.mp3", volume = 100 },
+    { name = "music/vlvx_song2.mp3", volume = 100 },
+    { name = "music/vlvx_song8.mp3", volume = 100 },
+    { name = "music/a5_vault_sideways_piano.mp3", volume = 100 },
+    { name = "music/a1_intro_world_2.mp3", volume = 100 }
 }
 
 if SERVER then
@@ -98,10 +112,36 @@ else -- CLIENT
     local currentMusic = nil
     local lastMusicChangeTime = 0
     local musicChangeCooldown = 1 -- Seconds before another music change can occur
+    local randomMusicTimer = "CheckForRandomMusic"
+    local timeInArea = 0 -- Tracks time spent in the same area
+    local isPlayingRandomMusic = false -- Flag to track random music state
+
+    -- Helper function to play random music continuously
+    local function PlayRandomMusic()
+        if currentMusic and currentMusic:IsPlaying() then return end -- Don't play if music is already playing
+
+        -- Select a random track from RANDOM_MUSIC
+        local randomTrack = table.Random(RANDOM_MUSIC)
+
+        -- Create the sound with the correct volume from the selected track
+        currentMusic = CreateSound(LocalPlayer(), randomTrack.name)
+        currentMusic:SetSoundLevel(randomTrack.volume)
+        currentMusic:Play()
+        currentMusic:SetDSP(0)
+
+        -- Schedule the next random track after this one ends
+        timer.Simple(SoundDuration(randomTrack.name) or 60, function() -- Default duration to 60 seconds if undefined
+            if isPlayingRandomMusic then
+                PlayRandomMusic()
+            end
+        end)
+    end
+
     net.Receive("AreaMusic", function()
         local musicName = net.ReadString()
         local volume = ix.option.Get("area-music volume")
         local currentTime = CurTime()
+
         if currentTime - lastMusicChangeTime < musicChangeCooldown then -- Check if we are within the cooldown period
             return
         end
@@ -112,17 +152,55 @@ else -- CLIENT
                 currentMusic = nil
             end
 
+            -- Reset area timer for random music
+            timeInArea = 0
             lastMusicChangeTime = currentTime
+
+            -- Start random music if not already playing
+            if not isPlayingRandomMusic then
+                isPlayingRandomMusic = true
+                PlayRandomMusic()
+            end
+
             return
         end
 
-        if musicName and musicName ~= "" and (ix.option.Get("area-music", true) or musicName == MUSIC_INFO["404 Zone"].name) and ix.config.Get("cityCode") < 1 then -- Play new music if available
+        if musicName and musicName ~= "" and ix.option.Get("area-music", true) then -- Play new music if available
             if currentMusic and currentMusic:IsPlaying() then currentMusic:FadeOut(1) end
             currentMusic = CreateSound(LocalPlayer(), musicName)
             currentMusic:SetSoundLevel(volume)
             currentMusic:Play()
             currentMusic:SetDSP(0)
+
+            -- Stop random music
+            isPlayingRandomMusic = false
+            timeInArea = 0 -- Reset area timer since new music started
             lastMusicChangeTime = currentTime
+
+            -- Ensure random music resumes after area music ends
+            timer.Simple(SoundDuration(musicName) or 60, function()
+                if not currentMusic or not currentMusic:IsPlaying() then
+                    timeInArea = 10 -- Trigger random music after area music ends
+                end
+            end)
+        end
+    end)
+
+    -- Timer to periodically check if random music should be played
+    timer.Create(randomMusicTimer, 1, 0, function()
+        if not ix.option.Get("area-music", true) then return end -- Check if music is enabled
+        if currentMusic and currentMusic:IsPlaying() then
+            timeInArea = 0 -- Reset the timer since music is already playing
+            return
+        end
+
+        timeInArea = timeInArea + 1 -- Increment time in area without music
+        if timeInArea >= 10 then -- Play random music if 10 seconds pass without music
+            if not isPlayingRandomMusic then
+                isPlayingRandomMusic = true
+                PlayRandomMusic()
+            end
+            timeInArea = 0 -- Reset the timer
         end
     end)
 end

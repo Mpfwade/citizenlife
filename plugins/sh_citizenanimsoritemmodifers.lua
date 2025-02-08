@@ -20,12 +20,14 @@ function PLUGIN:PlayerInteractItem(client, action, item) --             ix.comma
         })
 
         local pickupAnim = "Pickup"
+        local pickupreachAnim = "gunrack"
         if action == "take" then
             if client:GetNWBool("IsActing") then ix.command.Run(client, "ExitAct") end
             if trace.HitWorld and not client:IsWepRaised() then
                 client:ForceSequence(pickupAnim, nil, 1, true)
                 ix.chat.Send(client, "me", "bends over to pick up an item.")
             elseif not trace.HitWorld then
+                client:ForceSequence(pickupreachAnim, nil, 1, true)
                 ix.chat.Send(client, "me", "reaches out their arm to pick up an item.")
             end
         end

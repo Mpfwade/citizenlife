@@ -173,3 +173,4 @@ Schema.voices.Add("DispatchRadio", "DISXRAY", "XRAY", "npc/overwatch/radiovoice/
 Schema.voices.Add("DispatchRadio", "DISYELLOW", "YELLOW", "npc/overwatch/radiovoice/yellow.wav")
 Schema.voices.Add("DispatchRadio", "DISZERO", "Zero", "npc/overwatch/radiovoice/zero.wav")
 Schema.voices.Add("DispatchRadio", "DISFAILURE", "Overwatch acknowledges containment failure. Hold for reinforcement. Suppressor inbound", "dispatch/disp_reinforcement.wav")
+Schema.voices.Add("DispatchRadio", "DISASSIGNMENT", "Assignment", "dispatch/asignment.wav")

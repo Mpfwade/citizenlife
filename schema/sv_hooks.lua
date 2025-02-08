@@ -411,7 +411,6 @@ function Schema:PlayerLoadout(ply)
                 timer.Simple(math.random(4.00, 5.00), function()
                     ix.chat.Send(ply, "dispatchradioforce", "Unit down at, " .. location .. " reinforcement teams code 3. Investigate and report.", false)
                     Schema:AddCombineDisplayMessage("WARNING! Biosignal lost for protection team unit " .. combineName .. " at " .. location .. "...", Color(255, 0, 0, 255))
-                    Schema:AddWaypoint(ply.deathPos + Vector(0, 0, 30), "LOST BIOSIGNAL FOR " .. combineName, Color(200, 0, 0), 120, ply)
                 end)
             end)
         end
@@ -687,13 +686,6 @@ local onSounds = {
     "npc/metropolice/vo/on2.wav",
 }
 
-local offSounds = {
-    "npc/metropolice/vo/off1.wav",
-    "npc/metropolice/vo/off2.wav",
-    "npc/metropolice/vo/off3.wav",
-    "npc/metropolice/vo/off4.wav",
-}
-
 netstream.Hook("PlayerChatTextChanged", function(client, key)
     if client:IsCombine() and not client.bTypingBeep then
         local sound = onSounds[math.random(#onSounds)] -- Correct random sound selection
@@ -704,8 +696,6 @@ end)
 
 netstream.Hook("PlayerFinishChat", function(client)
     if client:IsCombine() and client.bTypingBeep then
-        local sound = offSounds[math.random(#offSounds)] -- Correct random sound selection
-        client:EmitSound(sound)
         client.bTypingBeep = nil
     end
 end)

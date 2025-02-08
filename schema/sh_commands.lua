@@ -131,12 +131,7 @@ ix.command.Add("GetAssignment", {
             return
         end
 
-		       client:EmitSound("npc/combine_soldier/vo/overwatchrequestreinforcement.wav")
-        timer.Simple(0.93, function()
-            if IsValid(client) then
-                client:StopSound("npc/combine_soldier/vo/overwatchrequestreinforcement.wav")
-            end
-        end)
+		client:EmitSound("dispatch/disdispatch.wav")
 
         timer.Simple(0.95, function()
             if IsValid(client) then
@@ -147,6 +142,20 @@ ix.command.Add("GetAssignment", {
         
         local currentEvent = plugin:GetEvent()
         if currentEvent then
+
+			timer.Simple(2, function()
+				if IsValid(client) then
+					client:EmitSound("dispatch/asignment.wav")
+				end
+			end)
+
+			timer.Simple(3, function()
+				if IsValid(client) then
+					client:EmitSound("npc/overwatch/radiovoice/inprogress.wav")
+				end
+			end)
+			
+			
             client:ChatPrint("Dispatch speaks through your radio. <::ATTENTION UNIT, CURRENT ASSIGNMENT IS " .. currentEvent)
         else
             client:ChatPrint("There is no active event at the moment.")

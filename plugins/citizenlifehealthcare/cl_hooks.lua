@@ -28,12 +28,13 @@ end
 
 hook.Add("HUDPaint", "MoodleHUDPaint", function() PLUGIN:HUDPaint() end)
 
-function PLUGIN:RenderScreenspaceEffects() -- Render screen effects
+function PLUGIN:RenderScreenspaceEffects()
     local character = LocalPlayer():GetCharacter()
     if LocalPlayer():IsCombine() then return end  -- Skip effects for Combine players.
     if character then
         local drunkEffect = character:GetDrunkEffect()
         local sicknessLevel = character:GetData("sickness", 0)
+        local hungerLevel = character:GetHunger() or 100  -- Default to 100 if hunger is not set
 
         -- Handle drunk effects
         if drunkEffect and drunkEffect > 0 then
@@ -45,29 +46,40 @@ function PLUGIN:RenderScreenspaceEffects() -- Render screen effects
             DrawSharpen(5, 5)
         end
 
-        -- Adjust motion blur based on sickness level
+        -- Initialize a base blur strength
+        local blurStrength = 0
+
+        -- Add blur for sickness level
         if sicknessLevel >= 89 then
-            -- Apply strong motion blur for high sickness levels
-            DrawMotionBlur(0.1, 0.4, 0.01)
+            blurStrength = blurStrength + 0.4  -- Strong sickness effect
             DrawColorModify({
                 ["$pp_colour_addr"] = 0,
                 ["$pp_colour_addg"] = 0,
                 ["$pp_colour_addb"] = 0,
                 ["$pp_colour_brightness"] = 0,
                 ["$pp_colour_contrast"] = 1,
-                ["$pp_colour_colour"] = 0, -- Reduce the color saturation to zero for grayscale
+                ["$pp_colour_colour"] = 0, -- Reduce color saturation to zero for grayscale
                 ["$pp_colour_mulr"] = 0,
                 ["$pp_colour_mulg"] = 0,
                 ["$pp_colour_mulb"] = 0
             })
         elseif sicknessLevel > 49 then
-            -- Apply moderate motion blur for medium sickness levels
-            DrawMotionBlur(0.1, 0.3, 0.01)
+            blurStrength = blurStrength + 0.3  -- Moderate sickness effect
         elseif sicknessLevel > 14 then
-            -- Apply mild motion blur for mild sickness levels
-            DrawMotionBlur(0.1, 0.1, 0.01)
+            blurStrength = blurStrength + 0.1  -- Mild sickness effect
+        end
+
+        -- Add blur for hunger level
+        if hungerLevel < 40 then
+            local hungerBlur = Lerp(1 - (hungerLevel / 40), 0.1, 0.5)  -- Increase blur as hunger drops
+            blurStrength = blurStrength + hungerBlur  -- Combine hunger blur with sickness blur
+        end
+
+        -- Apply the combined blur effect if either hunger or sickness is active
+        if blurStrength > 0 then
+            DrawMotionBlur(0.1, blurStrength, 0.01)
         else
-            -- No motion blur when sickness level is below 15
+            -- Reset blur if no conditions are active
             DrawMotionBlur(0, 0, 0)
         end
     end
@@ -158,6 +170,8 @@ net.Receive("TriggerScreenShake", function()
     util.ScreenShake(LocalPlayer():GetPos(), intensity, 5, duration, radius)
 end)
 
+local wasStamActive = false -- Track if stamina moodle was previously active
+
 net.Receive("MoodlesIcons", function()
     local char = LocalPlayer():GetCharacter()
     if not char then return end
@@ -171,20 +185,14 @@ net.Receive("MoodlesIcons", function()
     local sicknessLevel = char:GetData("sickness", 0)
 
     if sicknessLevel > 49 then
-        if PLUGIN.SetMoodleActive then  -- Check if function exists
-            PLUGIN:SetMoodleActive("moresick", true)
-            PLUGIN:SetMoodleActive("sick", false)
-        end
+        PLUGIN:SetMoodleActive("moresick", true)
+        PLUGIN:SetMoodleActive("sick", false)
     elseif sicknessLevel > 14 then
-        if PLUGIN.SetMoodleActive then
-            PLUGIN:SetMoodleActive("sick", true)
-            PLUGIN:SetMoodleActive("moresick", false)
-        end
+        PLUGIN:SetMoodleActive("sick", true)
+        PLUGIN:SetMoodleActive("moresick", false)
     else
-        if PLUGIN.SetMoodleActive then
-            PLUGIN:SetMoodleActive("sick", false)
-            PLUGIN:SetMoodleActive("moresick", false)
-        end
+        PLUGIN:SetMoodleActive("sick", false)
+        PLUGIN:SetMoodleActive("moresick", false)
     end
 
     local currentSanity = char:GetSanity()
@@ -205,7 +213,7 @@ net.Receive("MoodlesIcons", function()
 
     local currentStress = char:GetStress()
 
-     -- Reset all moodles first
+    -- Reset all moodles first
     PLUGIN:SetMoodleActive("stressed", false)
     PLUGIN:SetMoodleActive("terrified", false)
 
@@ -227,12 +235,21 @@ net.Receive("MoodlesIcons", function()
         PLUGIN:SetMoodleActive("weak", true)
     end
 
+    -- Track stamina
     local stamina = LocalPlayer():GetLocalVar("stm", 100)
 
     PLUGIN:SetMoodleActive("stam", false)
 
     if stamina < 25 then
         PLUGIN:SetMoodleActive("stam", true)
+
+        -- **Play sound if stamina just dropped below threshold**
+        if not wasStamActive then
+            surface.PlaySound("citizensounds/outofbreath.wav")
+            wasStamActive = true -- Mark as active
+        end
+    else
+        wasStamActive = false -- Reset when stamina recovers
     end
 end)
 

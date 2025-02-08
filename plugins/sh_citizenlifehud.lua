@@ -140,16 +140,19 @@ if CLIENT then
 
     local function DrawCombineHud()
         local ply = LocalPlayer()
-        local quota = ply:GetData("quota")
+        local quota = ply:GetData("quota") or 0 -- Default to 0 if quota is nil
+        local quotamax = ply:GetData("quotamax") or 8 -- Default to 8 if quotamax is nil
         local font = "CLCHud1"
         local color = Color(255, 255, 255)
         surface.SetFont(font)
         local startX = 10
         local startY = 31
-
+    
+        -- Draw the quota text in "quota / max quota" format
         if quota then
-            draw.SimpleTextOutlined("BEATING QUOTA: " .. quota .. " ::>", font, startX, startY, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
+            draw.SimpleTextOutlined("BEATING QUOTA: " .. quota .. " / " .. quotamax .. " ::>", font, startX, startY, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black)
         end
+
 
         local showLocalAssets = ix.option.Get("showLocalAssets", true)
         local y = startY + 20
@@ -243,88 +246,108 @@ if CLIENT then
             letterBoxHoldTime = nil
         end
     end
+end
+    
+local angleLerp = Angle(0, 0, 0)
+local bobTime = 0
+local bobFactor = 0
+local swayLerp = Angle(0, 0, 0)
+local rollLerp = 0 -- Smoothed roll value
+local rollVelocity = 0 -- Roll velocity for smooth acceleration/deceleration
+local lastVelocity = 0 -- Track last frame's velocity
 
-    local angleLerp = Angle(0, 0, 0)
-    local bobTime = 0
-    local bobFactor = 0
-    local swayTime = 0
-    local swayLerp = Angle(0, 0, 0)
+local cl_rollangle = CreateClientConVar("cl_rollangle", '5.5', true, true):GetFloat()
+cvars.AddChangeCallback("cl_rollangle", function(convar, oldValue, newValue)
+    cl_rollangle = tonumber(newValue) or cl_rollangle
+end)
 
-    local function CalcRoll(angles, velocity, rollAngle, rollSpeed)
-        if angles == nil or velocity == nil then return 0 end
-        local right = angles:Right()
-        local side = velocity:Dot(right)
-        local sign = side < 0 and -1 or 1
-        side = math.abs(side)
-        local value = rollAngle
-        if side < rollSpeed then
-            side = side * value / rollSpeed
-        else
-            side = value
-        end
-        return side * sign
+local cl_rollspeed = CreateClientConVar("cl_rollspeed", '200', true, true):GetFloat()
+cvars.AddChangeCallback("cl_rollspeed", function(convar, oldValue, newValue)
+    cl_rollspeed = tonumber(newValue) or cl_rollspeed
+end)
+
+local function CalcRoll(angles, velocity, rollAngle, rollSpeed, ft)
+    if not angles or not velocity then return 0 end
+
+    local right = angles:Right()
+    local side = velocity:Dot(right)
+    local sign = side < 0 and -1 or 1
+    side = math.abs(side)
+
+    -- Target roll value based on movement
+    local targetRoll = math.Clamp((side / rollSpeed) * rollAngle, 0, rollAngle) * sign
+
+    -- Roll acceleration/deceleration (momentum effect)
+    local acceleration = 5 -- How fast the roll builds up
+    local deceleration = 4 -- How fast the roll slows down
+
+    if side > 5 then -- Moving
+        rollVelocity = Lerp(ft * acceleration, rollVelocity, targetRoll)
+    else -- Stopping
+        rollVelocity = Lerp(ft * deceleration, rollVelocity, 0)
     end
 
-    local cl_rollangle = CreateClientConVar("cl_rollangle", '5.5', true, true):GetFloat()
-    cvars.AddChangeCallback("cl_rollangle", function(convar, oldValue, newValue)
-        cl_rollangle = tonumber(newValue) or cl_rollangle
-    end)
+    return rollVelocity
+end
 
-    local cl_rollspeed = CreateClientConVar("cl_rollspeed", '200', true, true):GetFloat()
-    cvars.AddChangeCallback("cl_rollspeed", function(convar, oldValue, newValue)
-        cl_rollspeed = tonumber(newValue) or cl_rollspeed
-    end)
+function PLUGIN:CalcView(ply, pos, ang, fov, nearZ, farZ)
+    if IsValid(ix.gui.characterMenu) and not ix.gui.characterMenu:IsClosing() then return end
+    if ply.ixRagdoll or ply.ixIntroState then return end
+    if ix.option.Get("thirdpersonEnabled") then return end
+    if ply:InVehicle() then return end
+    if ply:GetLocalVar("bIsHoldingObject") then return end
 
-    function PLUGIN:CalcView(ply, pos, ang, fov, nearZ, farZ)
-        if IsValid(ix.gui.characterMenu) and not ix.gui.characterMenu:IsClosing() then return end
-        if ply.ixRagdoll or ply.ixIntroState then return end
-        if ix.option.Get("thirdpersonEnabled") then return end
-        if ply:InVehicle() then return end
-        if ply:GetLocalVar("bIsHoldingObject") then return end
+    local view = {
+        origin = pos,
+        angles = ang,
+        fov = fov,
+    }
 
-        local view = {
-            origin = pos,
-            angles = ang,
-            fov = fov - 5,
-        }
+    local ft = FrameTime()
 
-        local roll = CalcRoll(ang, ply:GetVelocity(), cl_rollangle, cl_rollspeed)
-        view.angles.roll = view.angles.roll + roll
+    -- Get player movement speed
+    local velocity = ply:GetVelocity():Length2D()
+    local runningSpeed = ply:GetRunSpeed()
+    local walkingSpeed = ply:GetWalkSpeed()
+    local speedFraction = math.Clamp((velocity - walkingSpeed) / (runningSpeed - walkingSpeed), 0, 1)
 
-        local velocity = ply:GetVelocity():Length2D()
-        local runningSpeed = ply:GetRunSpeed()
-        local walkingSpeed = ply:GetWalkSpeed()
-        local speedFraction = math.Clamp((velocity - walkingSpeed) / (runningSpeed - walkingSpeed), 0, 1)
-        local shouldBob = ply:Alive() and velocity > 0 and ply:IsOnGround()
+    -- Apply smooth roll
+    local roll = CalcRoll(ang, ply:GetVelocity(), cl_rollangle, cl_rollspeed, ft)
+    view.angles.roll = view.angles.roll + roll
 
-        if shouldBob then
-            local frequencyMultiplier = Lerp(speedFraction, 5, 15)
-            local amplitudeMultiplier = Lerp(speedFraction, 0.1, 0.1)
-            bobTime = bobTime + FrameTime() * frequencyMultiplier
-            bobFactor = math.sin(bobTime) * amplitudeMultiplier
-            view.origin = view.origin + Vector(0, 0, bobFactor)
-            local angleBobPitch = bobFactor * Lerp(speedFraction, 3, 5)
-            view.angles.pitch = view.angles.pitch + angleBobPitch
-        else
-            bobFactor = math.max(bobFactor - FrameTime() * 0.05, 0)
-        end
-
-        if shouldBob then
-            local movementDirection = ply:GetVelocity():GetNormalized()
-            local swayAmount = Lerp(speedFraction, 0.5, 1.5)
-            swayLerp = LerpAngle(FrameTime() * 5, swayLerp, Angle(movementDirection.y * swayAmount, -movementDirection.x * swayAmount, 0))
-            view.angles = view.angles + swayLerp
-        end
-
-        local isWeaponRaised = IsValid(ply) and ply:Alive() and ply:IsWepRaised()
-        if isWeaponRaised and not (ply:GetMoveType() == MOVETYPE_NOCLIP or ply.ixRagdoll) then
-            angleLerp = LerpAngle(0.25, angleLerp, ang)
-        else
-            angleLerp = ang
-        end
-
-        view.angles = angleLerp
-
-        return view
+    -- Smooth bobbing effect (only when moving)
+    local shouldBob = ply:Alive() and velocity > 5 and ply:IsOnGround()
+    if shouldBob then
+        local frequencyMultiplier = Lerp(speedFraction, 5, 3)
+        local amplitudeMultiplier = Lerp(speedFraction, 0.1, 0.1)
+        bobTime = bobTime + ft * frequencyMultiplier
+        bobFactor = math.sin(bobTime) * amplitudeMultiplier
+        view.origin = view.origin + Vector(0, 0, bobFactor)
+        view.angles.pitch = view.angles.pitch + bobFactor * Lerp(speedFraction, 3, 5)
+    else
+        bobFactor = math.max(bobFactor - ft * 0.05, 0)
     end
+
+    -- Smooth movement sway effect
+    if shouldBob then
+        local movementDirection = ply:GetVelocity():GetNormalized()
+        local swayAmount = Lerp(speedFraction, 0.5, 1.5)
+        swayLerp = LerpAngle(ft * 5, swayLerp, Angle(movementDirection.y * swayAmount, -movementDirection.x * swayAmount, 0))
+        view.angles = view.angles + swayLerp
+    end
+
+    -- Track last velocity to help smooth stopping effect
+    lastVelocity = velocity
+
+    -- Weapon-raising smooth transition
+    local isWeaponRaised = IsValid(ply) and ply:Alive() and ply:IsWepRaised()
+    if isWeaponRaised and not (ply:GetMoveType() == MOVETYPE_NOCLIP or ply.ixRagdoll) then
+        angleLerp = LerpAngle(0.25, angleLerp, ang)
+    else
+        angleLerp = ang
+    end
+
+    view.angles = angleLerp
+
+    return view
 end

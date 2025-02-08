@@ -711,11 +711,18 @@ function PLUGIN:UpdateWeakness(ply, char)
         char:SetData("sickness", math.min(currentSickness + 1, 100))
     end
 
-    -- Scale player model bones based on weakness
+    -- Scale player model bones based on weakness, excluding the head bone
     local scale = 1 - (weakness / 750) -- Example: scale down to a minimum of 0.5 size
     local bones = ply:GetBoneCount() or 0
     for i = 0, bones - 1 do
-        ply:ManipulateBoneScale(i, Vector(scale, scale, scale))
+        local boneName = ply:GetBoneName(i)
+        -- Skip scaling for the head bone
+        if boneName and boneName ~= "ValveBiped.Bip01_Head" then
+            ply:ManipulateBoneScale(i, Vector(scale, scale, scale))
+        else
+            -- Reset head bone to default scale to ensure no unintended scaling
+            ply:ManipulateBoneScale(i, Vector(1, 1, 1))
+        end
     end
 
     -- More effective recovery when resting

@@ -51,37 +51,64 @@ PLUGIN.gestures = { -- Mainly for the citizen_male models, or models that includ
     --{gesture = "hg_nod_right", command = "HeadRight", id = 1473},
 }
 
+PLUGIN.femalegestures = { 
+    -- citizen rp go brrrr...
+    {gesture = "b_accent_back", command = "Accentback", id = 2444},
+    {gesture = "b_accent_fwd", command = "Accentfoward", id = 2445},
+    {gesture = "b_accent_fwd2", command = "Accentfoward2", id = 2446},
+    {gesture = "b_accent_fwd_UpperBody", command = "Accentfoward3", id = 2447},
+    {gesture = "b_head_back", command = "headback", id = 2448},
+    {gesture = "b_head_forward", command = "headforward", id = 2449},
+    {gesture = "b_OverHere_Left", command = "overhereleft", id = 2450},
+    {gesture = "b_OverHere_Right", command = "overhereright", id = 2451},
+    {gesture = "broadsweepdown", command = "sweepdown", id = 2452},
+    {gesture = "g_arrest_clench", command = "arrestclench", id = 2453},
+    {gesture = "g_display_left", command = "displayleft", id = 2454},
+    {gesture = "g_left_openhand", command = "openhandleft", id = 2455},
+    {gesture = "G_puncuate", command = "puncuate", id = 2456},
+    {gesture = "g_right_openhand", command = "openhandright", id = 2457},
+    {gesture = "g_wave", command = "femWave", id = 2458},
+    {gesture = "hg_headshake", command = "femHeadShake", id = 2459},
+    {gesture = "hg_nod_no", command = "femHeadNo", id = 2460},
+    {gesture = "hg_nod_yes", command = "femHeadYes", id = 2461},
+    {gesture = "hg_nod_left", command = "femHeadLeft", id = 2462},
+    {gesture = "hg_nod_right", command = "femHeadRight", id = 2463},
+    {gesture = "urgenthandsweep", command = "urgentsweep", id = 2467},
+
+}
+
 if (SERVER) then
--- Don't bother DMing me to add female variants, do it yourself.
+    function PLUGIN:DoAnimationEvent(player, event, data)
+        if event == PLAYERANIMEVENT_CUSTOM_GESTURE then
+            local gestureTable = player:IsFemale() and self.femalegestures or self.gestures
+            
+            for _, gesture in pairs(gestureTable) do
+                if data == gesture.id then
+                    if player.isAnimating then return end
+                    net.Start("PlayerGesture")
+                    net.WriteEntity(player)
+                    net.WriteUInt(gesture.id, 16) -- Use 16 bits to send the gesture ID
+                    net.Broadcast()
 
-function PLUGIN:DoAnimationEvent(player, event, data)
-    if event == PLAYERANIMEVENT_CUSTOM_GESTURE then
-        for _, gesture in pairs(self.gestures) do
-            if data == gesture.id then
-                if player.isAnimating then return end
-                net.Start("PlayerGesture")
-                net.WriteEntity(player)
-                net.WriteUInt(gesture.id, 16) -- Use 16 bits to send the gesture ID
-                net.Broadcast()
+                    -- Apply the gesture to the initiating player
+                    player:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, player:LookupSequence(gesture.gesture), 0, true)
+                    player.isAnimating = true
 
-                -- Apply the gesture to the initiating player
-                player:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, player:LookupSequence(gesture.gesture), 0, true)
-                player.isAnimating = true
+                    -- Reset the animation state after the duration of the animation
+                    timer.Simple(player:SequenceDuration(), function()
+                        if IsValid(player) then
+                            player.isAnimating = false
+                        end
+                    end)
 
-                -- Reset the animation state after the duration of the animation
-                timer.Simple(player:SequenceDuration(), function()
-                    if IsValid(player) then
-                        player.isAnimating = false
-                    end
-                end)
-
-                return ACT_INVALID
+                    return ACT_INVALID
+                end
             end
         end
     end
-end
 
-for k, v in pairs(PLUGIN.gestures) do
+-- Register male gestures
+for _, v in pairs(PLUGIN.gestures) do
     local commandname = string.Replace(v.gesture, "hg_", "")
     commandname = string.Replace(commandname, "g_", "")
     commandname = string.Replace(commandname, "antman_", "")
@@ -89,23 +116,56 @@ for k, v in pairs(PLUGIN.gestures) do
 
     concommand.Add("ix_act_"..v.command, function(ply, cmd, args)
         if ply.isAnimating then return end -- Prevent playing a new animation if one is already active
-        ply:DoAnimationEvent(v.id)
+        local gestureTable = ply:IsFemale() and PLUGIN.femalegestures or PLUGIN.gestures
+
+        for _, gesture in pairs(gestureTable) do
+            if gesture.command == v.command then
+                ply:DoAnimationEvent(gesture.id)
+                break
+            end
+        end
     end)
 
     ix.command.Add("Gesture"..v.command, {
         description = "Play the "..commandname.." gesture.",
         OnCanRun = function(_, ply)
-            if ply:IsFemale() then
-                return "Female variants are not supported."
-            end
-            if not ply:IsSuperAdmin() or ply:IsAdmin() then
+            if not ply:IsSuperAdmin() and not ply:IsAdmin() then
                 return "You need to be an admin!"
             end
         end,
         OnRun = function(_, ply)
-            if ( SERVER ) then
-                ply:ConCommand("ix_act_"..v.command)
+            ply:ConCommand("ix_act_"..v.command)
+        end
+    })
+end
+
+-- Register female gestures
+for _, v in pairs(PLUGIN.femalegestures) do
+    local commandname = string.Replace(v.gesture, "hg_", "")
+    commandname = string.Replace(commandname, "b_", "")
+    commandname = string.Replace(commandname, "_", " ")
+
+    concommand.Add("ix_act_"..v.command, function(ply, cmd, args)
+        if ply.isAnimating then return end -- Prevent playing a new animation if one is already active
+        local gestureTable = ply:IsFemale() and PLUGIN.femalegestures or PLUGIN.gestures
+
+        for _, gesture in pairs(gestureTable) do
+            if gesture.command == v.command then
+                ply:DoAnimationEvent(gesture.id)
+                break
             end
+        end
+    end)
+
+    ix.command.Add("Gesture"..v.command, {
+        description = "Play the "..commandname.." gesture.",
+        OnCanRun = function(_, ply)
+            if not ply:IsSuperAdmin() and not ply:IsAdmin() then
+                return "You need to be an admin!"
+            end
+        end,
+        OnRun = function(_, ply)
+            ply:ConCommand("ix_act_"..v.command)
         end
     })
 end
@@ -118,24 +178,32 @@ end
         ["y"] = true,
     }
 
-    local RandomAnims = {"ix_act_armsout", "ix_act_no", "ix_act_nosmall", "ix_act_plead", "ix_act_point", "ix_act_chestup", "ix_act_fistleft", "ix_act_present", "ix_act_headleft", "ix_act_headright"}
-    local WhatAnims = {"ix_act_what", "ix_act_shrug"}
+    local MaleRandomAnims = {"ix_act_armsout", "ix_act_no", "ix_act_nosmall", "ix_act_plead", "ix_act_point", "ix_act_chestup", "ix_act_fistleft", "ix_act_present", "ix_act_headleft", "ix_act_headright"}
+    local MaleWhatAnims = {"ix_act_what", "ix_act_shrug"}
+
+    local FemaleRandomAnims = {"ix_act_accentback", "ix_act_accentfoward", "ix_act_accentfoward2", "ix_act_accentfoward3", "ix_act_headback", "ix_act_headforward", "ix_act_overhereleft", "ix_act_overhereright", "ix_act_puncuate", "ix_act_urgentsweep"}
+    local FemaleWhatAnims = {"ix_act_puncuate", "ix_act_accentback"}
+
     function PLUGIN:PrePlayerMessageSend(ply, chatType, message, bAnonymous)
-        if ( allowedChatTypes[chatType] ) then
-            if ( message:find("!") ) then
+        if allowedChatTypes[chatType] then
+            local isFemale = ply:IsFemale()
+            local RandomAnims = isFemale and FemaleRandomAnims or MaleRandomAnims
+            local WhatAnims = isFemale and FemaleWhatAnims or MaleWhatAnims
+
+            if message:find("!") then
                 ply:ConCommand("ix_act_fistswing")
-            elseif ( message:find("?") ) then
-                ply:ConCommand( table.Random( WhatAnims ) )
-            elseif ( message:find( "Nice" ) ) then
+            elseif message:find("?") then
+                ply:ConCommand(table.Random(WhatAnims))
+            elseif message:find("Nice") then
                 ply:ConCommand("ix_act_thumbsup")
-            elseif ( message:find("YAY") or message:find("Hooray") or message:find("Bravo") ) then
+            elseif message:find("YAY") or message:find("Hooray") or message:find("Bravo") or message:find("cheer") or message:find("cheer2") or message:find("cheer3") then
                 ply:ConCommand("ix_act_clap")
-            elseif ( message:find("Mhm") ) then
+            elseif message:find("Mhm") then
                 ply:ConCommand("ix_act_headyes")
-            elseif ( message:find("Stay down") or message:find("Get down!") or message:find("Get down") or message:find("Take cover!") or message:find("Take cover") ) then
+            elseif message:find("Stay down") or message:find("Get down!") or message:find("Get down") or message:find("Take cover!") or message:find("Take cover") then
                 ply:ConCommand("ix_act_dontmove")
-            elseif ( message:find(".")) then
-                ply:ConCommand( table.Random( RandomAnims ) )
+            elseif message:find(".") then
+                ply:ConCommand(table.Random(RandomAnims))
             end
         end
     end
@@ -146,23 +214,30 @@ if CLIENT then
         local player = net.ReadEntity()
         local gestureId = net.ReadUInt(16)
     
-        if IsValid(player) and not player.isAnimating then
-            for _, gesture in pairs(PLUGIN.gestures) do
-                if gestureId == gesture.id then
-                    -- Apply the gesture to the player
-                    player:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, player:LookupSequence(gesture.gesture), 0, true)
-                    player.isAnimating = true
+        if IsValid(player) then
+            player.activeGestures = player.activeGestures or {}
     
-                    -- Reset the animation state after the duration
-                    timer.Simple(player:SequenceDuration(), function()
-                        if IsValid(player) then
-                            player.isAnimating = false
-                        end
-                    end)
+            -- Prevent duplicate animations of the same gesture
+            if not player.activeGestures[gestureId] then
+                local gestureTable = player:IsFemale() and PLUGIN.femalegestures or PLUGIN.gestures
+                for _, gesture in pairs(gestureTable) do
+                    if gestureId == gesture.id then
+                        -- Apply the gesture to the player
+                        player:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, player:LookupSequence(gesture.gesture), 0, true)
+                        player.activeGestures[gestureId] = true
     
-                    break
+                        -- Reset the animation state after the duration
+                        timer.Simple(player:SequenceDuration(), function()
+                            if IsValid(player) then
+                                player.activeGestures[gestureId] = nil
+                            end
+                        end)
+    
+                        break
+                    end
                 end
             end
         end
     end)
 end
+    
